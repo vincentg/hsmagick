@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 module Graphics.Transform.Magick.Types where
 
 import Foreign

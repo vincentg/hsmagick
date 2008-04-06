@@ -1,5 +1,5 @@
-{-# OPTIONS -ffi -cpp -fglasgow-exts #-}
-
+{-# OPTIONS -ffi -cpp #-}
+{-# LANGUAGE PatternSignatures #-}
 module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage, pingImage,
               readInlineImage,
               getFilename,
@@ -34,7 +34,7 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
              -- constitution
               constituteImage,
               dispatchImage,
-              exportPixelImageArea,
+              --exportPixelImageArea,
               importPixelImageArea,
              -- composition
               compositeImage,
@@ -45,19 +45,19 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               appendImages,
               averageImages,
               cycleColormapImage,
-              describeImage,
+--              describeImage,
              -- Stuff what displays stuff
               animateImages) where
 
 #include <magick/api.h>
 
-import Magick
-import Types
-import FFIHelpers
-import Errors
-import Util
+import Graphics.Transform.Magick.Magick
+import Graphics.Transform.Magick.Types
+import Graphics.Transform.Magick.FFIHelpers
+import Graphics.Transform.Magick.Errors
+import Graphics.Transform.Magick.Util
 
-import Char
+import Data.Char
 import Data.List
 import Data.Maybe
 import System.Directory
@@ -102,8 +102,11 @@ constituteImage :: (StorablePixel a b) => PixMap -> [[a]] -> HImage
 -- the array it's returning.
 dispatchImage :: (StorablePixel a b) => PixMap -> StorageType -> Rectangle -> 
                    HImage -> [[a]]
+{-
+TODO
 exportPixelImageArea :: (StorablePixel a b) => QuantumType2 -> Word -> 
      Maybe ExportPixelAreaOptions -> HImage -> [[a]]
+-}
 -- TODO: this requires that the pixels are unsigned chars. Is there a better way?
 importPixelImageArea :: QuantumType2 -> Word -> [[Word8]] -> 
      Maybe ImportPixelAreaOptions -> HImage -> HImage
@@ -118,7 +121,8 @@ newImageColormap   :: Word32 -> HImage
 appendImages       :: ImageOrder -> [HImage] -> HImage
 averageImages      :: [HImage] -> HImage
 cycleColormapImage :: Int -> HImage -> HImage 
-describeImage      :: Verbosity -> HImage -> String
+-- TODO.
+-- describeImage      :: Verbosity -> HImage -> String
 ------------- Stuff what displays stuff
 animateImages      :: [HImage] -> IO ()
 --------------------------------------------------------------
@@ -204,6 +208,8 @@ cycleColormapImage amount img = sideEffectingOp
   (\ im -> cycle_colormap_image (getImage im) (fromIntegral amount))
   img
 
+{- 
+TODO.
 describeImage verbosity img = unsafePerformIO $ do
 -- the API requires a file in which to dump the description -- grr
   tmpDir    <- getTemporaryDirectory
@@ -215,6 +221,7 @@ describeImage verbosity img = unsafePerformIO $ do
        "describeImage: error describing" (== 0) (getExceptionInfo img)
      fclose filePtr
      readFile fp))
+-}
   
 ------------- Stuff what displays stuff
 animateImages images@(img:_) = do
@@ -426,6 +433,8 @@ dispatchImage pixMap storType (Rectangle{ width=cols, height=rws,
              return $ groups cols blobs))) 
             where len = (fromIntegral cols*fromIntegral rws*pixelSize pixMap)
 
+{-
+TODO: Seems to have disappeared from library
 -- note: the exportInfo structure that export_image_pixel_area initializes
 -- only contains the number of bytes exported, which we use to determine
 -- the length of the list exportPixelImageArea returns -- so we don't need
@@ -446,6 +455,7 @@ exportPixelImageArea quantumType quantumSize options hImage =
              where rws  = hImageRows hImage
                    cols = hImageColumns hImage
                    imagePixels = rws*cols
+-}
 
 -- this may very well be wrong
 importPixelImageArea quantumType quantumSize pixels options hImage = 
@@ -494,8 +504,8 @@ withRectangle :: Rectangle ->
  HImage -> IO HImage
 withRectangle rect transform hImage = do
   -- Does this actually free the memory?
-  rectPtr::ForeignPtr Rectangle <- mallocForeignPtr
-  -- This was causing a segfault so it's temporarily commented out.
+  (rectPtr::ForeignPtr Rectangle) <- mallocForeignPtr
+  -- This was causing a segfault so it\'s temporarily commented out.
   -- TODO: Worry about memory freeing.
   --addForeignPtrFinalizer p_free rectPtr
   withForeignPtr rectPtr $ 

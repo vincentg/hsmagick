@@ -5,8 +5,14 @@ library. You will need to install GraphicsMagick first -- see:
 
 I have tested these bindings with GraphicsMagick 1.1.10.
 
-Please submit bug reports, feedback, complaints, praise, and
-especially patches to me at:
+The Haddock documentation only includes type signatures so far, and
+that's not good enough. However, the API calls should mostly map onto
+those documented at:
+
+   http://www.graphicsmagick.org/www/api.html
+
+Please submit bug reports, questions, feedback, complaints, praise,
+and especially patches (including documentation patches) to me at:
 
    chevalier@alum.wellesley.edu
 
@@ -18,4 +24,5 @@ the Portland Functional Programming Study Group, and David MacIver,
 for their encouragement.
 
   -- Tim Chevalier
+     Portland, Oregon
      April 6, 2008

@@ -1,5 +1,5 @@
 {-# OPTIONS -ffi #-}
-module Magick(module Foreign.C.Types,
+module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               module Foreign,
               module Foreign.C.String,
               module Control.Monad,
@@ -40,7 +40,7 @@ module Magick(module Foreign.C.Types,
               -- constitution
               constitute_image,
               dispatch_image,
-              export_image_pixel_area,
+              --export_image_pixel_area,
               export_pixel_area_options_init,
               import_image_pixel_area,
               import_pixel_area_options_init,
@@ -87,7 +87,7 @@ module Magick(module Foreign.C.Types,
               fopen,
               fclose) where
 
-import Types
+import Graphics.Transform.Magick.Types
 
 import Foreign
 import Foreign.C.Types
@@ -127,10 +127,13 @@ foreign import ccall "static magick/api.h DispatchImage"
     dispatch_image :: Ptr HImage_ -> CULong -> CULong ->
       CULong -> CULong -> CString -> CUInt 
       -> Ptr a -> Ptr ExceptionInfo -> IO CUInt
+{-
+TODO: this doesn't seem to exist anymore...
 foreign import ccall "static magick/api.h ExportImagePixelArea"
     export_image_pixel_area :: Ptr HImage_ -> CUInt -> CUInt ->
       Ptr a -> Ptr ExportPixelAreaOptions -> 
       Ptr ExportPixelAreaInfo -> IO CUInt
+-}
 foreign import ccall "static magick/api.h ExportPixelAreaOptionsInit"
     export_pixel_area_options_init :: 
        Ptr ExportPixelAreaOptions -> IO ()
