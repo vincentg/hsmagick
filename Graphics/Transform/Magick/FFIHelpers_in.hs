@@ -1,4 +1,4 @@
-module FFIHelpers(withExceptions,
+module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   withExceptions_,
                   setField,
                   (-->),

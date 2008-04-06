@@ -1,4 +1,4 @@
-module Types where
+module Graphics.Transform.Magick.Types where
 
 import Foreign
 import Foreign.C.Types

@@ -1,6 +1,6 @@
 {-# OPTIONS -ffi -cpp -fglasgow-exts #-}
 
-module Images(initializeMagick, readImage, writeImage, pingImage,
+module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage, pingImage,
               readInlineImage,
               getFilename,
              -- transformations

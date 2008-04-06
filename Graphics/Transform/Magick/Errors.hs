@@ -1,4 +1,4 @@
-module Errors where
+module Graphics.Transform.Magick.Errors where
 
 import Control.Exception
 

@@ -8,6 +8,7 @@ license-file:        LICENSE
 author:              Tim Chevalier
 maintainer:          chevalier@alum.wellesley.edu
 copyright:           (c) Tim Chevalier, 2008
-build-Depends:       base
+build-depends:       base
+exposed-modules:     Graphics.Transform.Magick.Images Graphics.Transform.Magick.Types
 ghc-options:         
 tested-with:         GHC ==6.8.2
