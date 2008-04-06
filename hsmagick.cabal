@@ -1,0 +1,11 @@
+name:                hsmagick
+version:             0.0
+synopsis:            <Project description>
+description:         <Project description>
+category:            Graphics
+license:             BSD3
+license-file:        LICENSE
+author:              Tim Chevalier
+maintainer:          chevalier@alum.wellesley.edu
+build-Depends:       base
+ghc-options:         

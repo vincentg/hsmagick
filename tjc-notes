@@ -1,0 +1,159 @@
+
+Sept. 6
+
+I can't figure out how to define a structure with an array field. c2hs will do it, maybe?
+Look for an example of a struct type like this in gtk2hs or something.
+
+Sept. 7
+
+perhaps #ptr in hsc2hs could be used to get the address of imageInfo->filename, then we can call strcpy (or pokeByteOff).
+
+WriteImage returns 1. I don't know if it's an error or not. in any case, when I pass in the exception, catchException doesn't do anything. however ReadImage seems to be working all right. What's up? I do not know.
+
+Oct. 5
+
+So GraphicsMagick 1.1.7 (the version in the debian repo) deadlocks if you call InitializeMagick before the lock file exists. Trying to download 1.2.
+
+building GraphicsMagick:
+./configure --without-magick-plus-plus --without-perl
+
+but it works now. to enable logging, set MAGICK_DEBUG environment variable to "All". This dumps log to stdout. (or stderr. whatever.)
+
+(now we have two versions of GM installed so we have to make sure to set the include dirs so that it looks in /usr/local/include/GraphicsMagick first.)
+
+Retardation: WriteImage uses the filename member of the image structure to determine the file to write to, but it takes both an Image and an ImageInfo, which BOTH have filename fields. They can get out of sync.
+
+next up: Storable instance for HImage
+
+maybe it would make a lot more sense to do this by patching hsc2hs to handle array fields in structs...
+
+Oct. 6
+
+Issues:
+- repeated code for exception handling [DONE]
+- charArray handling [DONE, or at least, now we use peek/poke or rather, getField and (-->)]
+   * still an issue since getting one field of a pointer requires peeking the entire thing,
+     and writing one field requires peeking/poking the entire thing
+- boilerplate for type declarations and Storable instances 
+- what about memory management?
+
+next up: write a Storable instance for ExceptionInfo (which is a struct contained inside a struct,
+so things weren't getting copied properly.)
+
+Things under transform.html that aren't implemented yet because they involve animation:
+* CoalesceImages
+
+Oct. 7
+
+We don't need an exception field in our HImage -- we should use the exception field in
+an Image.
+
+next up: resize
+
+Working on enhancement ops.
+
+Oct. 8
+
+gm convert -gamma foo/bar/quux doesn't seem to work. report it!
+
+doc bug to report: LevelImageChannel doesn't actually take a level string.
+
+
+----
+constituteImage is worth writing home about. Look at the type in Haskell!
+Look at the type in C!
+
+working on dispatchImage. blergh type errrors...
+
+Oct. 10
+
+dispatchImage gives this error:
+Images_in.hs:300:50:
+    Ambiguous type variables `b', `a' in the constraint:
+      `StorablePixel a b'
+	arising from use of `storageType' at Images_in.hs:300:50-75
+    Probable fix: add a type signature that fixes these type variable(s)
+
+Not sure if it's recoverable. Think!
+
+It is, but only by doing some stupid things.
+
+Next: test for exportPixelImageArea.
+
+Oct. 11
+
+I seem to be doing one function per day. Done with exportPixelImageArea, on to
+ExportPixelAreaOptionsInit.
+
+Oct. 12
+
+ah, this doesn't need to be in the API (should only be used w/in exportPixel
+ImageArea, or perhaps not at all)
+
+importPixelImageArea is done, now need a test.
+
+Oct. 13
+
+ImportPixelAreaOptionsInit also doesn't need to be in the API, but should use it w/in import... Maybe.
+
+working on C code to try to figure out what ReadInlineImage does. there seem to be problems if there are nulls in the binary image data.
+
+Oct. 14
+
+the base-64-reading code is *very* fragile:
+- there must be a comma between the metadata and the string itself 
+- we have to delete the three-equals-signs-on-a-single-line at the end
+- string can't have newlines.
+
+status:
+resizing: all functions implemented
+transforms: CoalesceImages, DeconstructImages not done yet, but will be.
+            TransformImage will not be implemented.
+shear/rotate: all functions implemented
+enhancement: all functions implemented
+constitution: everything except WriteImages and some functions that probably aren't necessary are implemented.
+composition: all functions implemented
+image methods: not doing AllocateNextImage or AnimateImages yet
+ or CatchImageException: what's the difference between this and CatchException?
+ or DisplayImages, GetImageException
+ is ModifyImage necessary?
+ also not sure if we need ReferenceImage
+   No wrappers yet for AccessDefinition, AddDefinitions, RemoveDefinition (do we ever need to
+   manipulate this stuff from Haskell?)
+   ClipPathImage: not implemented b/c I can't find a way to test it
+image channel methods:
+color counting:
+reducing colors:
+segmenting:
+image effects:
+special effects:
+image decoration:
+text attributes:
+annotation:
+painting:
+drawing:
+thumbnails:
+interactive display/edit:
+interactive animation:
+getting/setting pixels:
+image lists:
+reading/writing objects:
+reading/listing formats:
+message digests:
+registry:
+error:
+pixel operators:
+progress monitor:
+
+
+when we create images, should we use a finalizer that calls DestroyImage?
+
+next: wrappers for everything under "Image methods" in Magick. fwee!
+
+setImageColormap doesn't work. why????????/
+
+Oct. 16
+
+argh, I don't understand how ClipPathImage works. is the image with the clipping path in it required to be a TIFF? I have an SVG image with a path in it and it doesn't seem to work.
+
+I want to post to the mailing list but my subscription request seems to be pending.

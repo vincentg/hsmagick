@@ -1,0 +1,21 @@
+This is an incomplete set of FFI bindings for the GraphicsMagick
+library. You will need to install GraphicsMagick first -- see:
+   
+   http://www.graphicsmagick.org/
+
+I have tested these bindings with GraphicsMagick 1.1.10.
+
+Please submit bug reports, feedback, complaints, praise, and
+especially patches to me at:
+
+   chevalier@alum.wellesley.edu
+
+I did a lot of this work during the second Haskell Hackathon (Hac II
+'07) in Freiburg in September 2007. I'd like to thank all the
+attendees at Hac II for their moral support, particularly Duncan
+Coutts for help with the FFI, as well as: Mark Jones, the members of
+the Portland Functional Programming Study Group, and David MacIver,
+for their encouragement.
+
+  -- Tim Chevalier
+     April 6, 2008
