@@ -1,11 +1,12 @@
 name:                hsmagick
-version:             0.0
-synopsis:            <Project description>
-description:         <Project description>
+version:             0.1
+synopsis:            FFI bindings for the GraphicsMagick library
+description:         FFI bindings for the GraphicsMagick library
 category:            Graphics
 license:             BSD3
 license-file:        LICENSE
 author:              Tim Chevalier
 maintainer:          chevalier@alum.wellesley.edu
+copyright:           (c) Tim Chevalier, 2008
 build-Depends:       base
 ghc-options:         
