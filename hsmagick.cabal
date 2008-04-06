@@ -10,3 +10,4 @@ maintainer:          chevalier@alum.wellesley.edu
 copyright:           (c) Tim Chevalier, 2008
 build-Depends:       base
 ghc-options:         
+tested-with:         GHC ==6.8.2
