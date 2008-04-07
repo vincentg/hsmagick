@@ -11,6 +11,13 @@ those documented at:
 
    http://www.graphicsmagick.org/www/api.html
 
+Tests can be found in:
+   Graphics.Transform.Magick.Test
+However, right now all tests are commented out since I didn't have
+time to change them to use non-hard-wired file names. I hope it should
+be obvious what my intentions were. A less ad hoc test framework would
+be better yet.
+
 Please submit bug reports, questions, feedback, complaints, praise,
 and especially patches (including documentation patches) to me at:
 
