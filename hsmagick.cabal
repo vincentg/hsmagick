@@ -18,4 +18,4 @@ pkgconfig-depends:   GraphicsMagick >= 1.1.10, lcms, freetype2, sm, ice, x11, li
 tested-with:         GHC ==6.8.2
 extensions:          CPP, ForeignFunctionInterface, MultiParamTypeClasses, FunctionalDependencies, PatternSignatures
 data-files:          README
-
+build-type:          Simple
