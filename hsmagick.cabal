@@ -12,8 +12,7 @@ build-depends:       base, directory, filepath, pretty, process
 exposed-modules:     Graphics.Transform.Magick.Images, Graphics.Transform.Magick.Types, Graphics.Transform.Magick.Test
 other-modules:       Graphics.Transform.Magick.FFIHelpers, Graphics.Transform.Magick.Util, Graphics.Transform.Magick.Errors, Graphics.Transform.Magick.Magick
 ghc-options:         -Wall
--- TODO: better place to put libs?
-ld-options:          -ltiff -ljasper -ljpeg -lpng -lwmflite -lbz2 -lz -lm -lpthread
+extra-libraries:     tiff jasper jpeg png wmflite bz2 z m pthread
 pkgconfig-depends:   GraphicsMagick >= 1.1.10, lcms, freetype2, sm, ice, x11, libxml-2.0
 tested-with:         GHC ==6.8.2
 extensions:          CPP, ForeignFunctionInterface, MultiParamTypeClasses, FunctionalDependencies, PatternSignatures
