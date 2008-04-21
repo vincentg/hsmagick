@@ -3,7 +3,13 @@ library. You will need to install GraphicsMagick first -- see:
    
    http://www.graphicsmagick.org/
 
-I have tested these bindings with GraphicsMagick 1.1.10.
+
+I have tested these bindings with GraphicsMagick 1.2, which is
+available as a "snapshot" from the above URL. The library will not
+build with GraphicsMagick 1.1.10 or 1.1.11 (the most recent
+released version as of this writing). If it's important to you to
+be able to use this library with a stable released version of
+GraphicsMagick, let me know.
 
 The Haddock documentation only includes type signatures so far, and
 that's not good enough. However, the API calls should mostly map onto

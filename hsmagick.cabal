@@ -15,7 +15,7 @@ exposed-modules:     Graphics.Transform.Magick.Images, Graphics.Transform.Magick
 other-modules:       Graphics.Transform.Magick.FFIHelpers, Graphics.Transform.Magick.Util, Graphics.Transform.Magick.Errors, Graphics.Transform.Magick.Magick
 ghc-options:         -Wall
 extra-libraries:     tiff jasper jpeg png wmflite bz2 z m pthread
-pkgconfig-depends:   GraphicsMagick >= 1.1.10, lcms, freetype2, sm, ice, x11, libxml-2.0
+pkgconfig-depends:   GraphicsMagick >= 1.2, lcms, freetype2, sm, ice, x11, libxml-2.0
 tested-with:         GHC ==6.8.2
 extensions:          CPP, ForeignFunctionInterface, MultiParamTypeClasses, FunctionalDependencies, PatternSignatures
 data-files:          README
