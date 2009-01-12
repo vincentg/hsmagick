@@ -1,4 +1,4 @@
-{-# OPTIONS -ffi #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               module Foreign,
               module Foreign.C.String,
