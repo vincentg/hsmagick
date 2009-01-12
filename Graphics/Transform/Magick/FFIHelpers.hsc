@@ -334,7 +334,7 @@ instance Storable HImageInfo where
       progress'    <- (#peek ImageInfo, progress) ptr
       authenticate' <- (#peek ImageInfo, authenticate) ptr
       client_data' <- (#peek ImageInfo, client_data) ptr
-      stream'      <- (#peek ImageInfo, stream) ptr
+--      stream'      <- (#peek ImageInfo, stream) ptr
       file'        <- (#peek ImageInfo, file) ptr
       magick'      <- peekStringFromCharArray $ (#ptr ImageInfo, magick) ptr
       filename'    <- peekStringFromCharArray $ (#ptr ImageInfo, filename) ptr
@@ -384,7 +384,7 @@ instance Storable HImageInfo where
                           progress=progress',
                           authenticate=authenticate',
                           client_data=client_data',
-                          stream=stream',
+--                          stream=stream',
                           file=file',
                           magick=magick',
                           filename=filename',
@@ -435,7 +435,7 @@ instance Storable HImageInfo where
       (#poke ImageInfo, view       ) ptr (view  hImageInfo     )
       (#poke ImageInfo, authenticate) ptr (authenticate hImageInfo)
       (#poke ImageInfo, client_data) ptr (client_data hImageInfo)
-      (#poke ImageInfo, stream     ) ptr (stream hImageInfo    )
+--      (#poke ImageInfo, stream     ) ptr (stream hImageInfo    )
       (#poke ImageInfo, file       ) ptr (file hImageInfo       )
       -- the two char-array things: magick and filename
       pokeStringIntoCharArray ((#ptr ImageInfo, magick) ptr) (magick hImageInfo)

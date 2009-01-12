@@ -339,7 +339,7 @@ data HImageInfo = HImageInfo {
  view            :: CString,
  authenticate    :: CString,
  client_data     :: CString,
- stream          :: StreamHandler,
+-- stream          :: StreamHandler,
  file            :: Ptr CFile,
 -- these two are actually represented as arrays
  magick          :: String,
