@@ -1,5 +1,4 @@
 {-# OPTIONS -fno-warn-orphans #-}
-{-# LANGUAGE ScopedTypeVariables, FlexibleInstances #-}
 module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   withExceptions_,
                   setField,

@@ -1,4 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP #-}
 module Graphics.Transform.Magick.Test(runAllTests) where
 -------------------------------------------------------------------------------
 -- | Ad hoc unit tests. Should really use HUnit.

@@ -1,4 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables, CPP #-}
 module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage, pingImage,
               readInlineImage,
               getFilename,
