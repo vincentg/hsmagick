@@ -10,7 +10,7 @@ maintainer:          chevalier@alum.wellesley.edu
 copyright:           (c) Tim Chevalier, 2008
 stability:           alpha
 homepage:            http://community.haskell.org/~tim
-Cabal-Version:       >= 1.2
+Cabal-Version:       >= 1.2.3
 
 tested-with:         GHC ==6.8.2, GHC==6.10.1
 build-type:          Simple
