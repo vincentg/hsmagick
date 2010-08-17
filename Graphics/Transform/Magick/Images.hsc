@@ -57,7 +57,6 @@ import Graphics.Transform.Magick.Util
 
 import Data.Char
 import Data.List
-import Data.Maybe
 import System.Directory
 
 -- The externally-visible Haskell API for GraphicsMagick.

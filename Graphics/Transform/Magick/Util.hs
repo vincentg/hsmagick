@@ -1,9 +1,9 @@
-{-# OPTIONS -Wall -Werror #-}
+{-# OPTIONS -Wall #-}
 module Graphics.Transform.Magick.Util(
     allM, butLast, assertM, commaSep, groups) where
 
 import Data.List
-import GHC.IOBase
+import Control.Exception
 
 ------------------
 -- Monad utilities

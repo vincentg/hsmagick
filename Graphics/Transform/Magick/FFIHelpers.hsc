@@ -141,7 +141,7 @@ linkImagesTogether :: [HImage] -> IO ()
 linkImagesTogether [] = signalException $ "internal error: linkImagesTogether:"
                          ++ " empty list"
 linkImagesTogether (img:images) = do
-         foldM (\ bigImage smallImage -> do
+         _ <- foldM (\ bigImage smallImage -> do
                     (#poke Image, next) (getImage bigImage) 
                          (getImage smallImage)
                     return smallImage) 
