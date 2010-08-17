@@ -17,7 +17,7 @@ build-type:          Simple
 data-files:          README
 
 Library {
-build-depends:       base, directory, filepath, pretty, process
+build-depends:       base < 5, directory, filepath, pretty, process
 exposed-modules:     Graphics.Transform.Magick.Images, Graphics.Transform.Magick.Types, Graphics.Transform.Magick.Test
 other-modules:       Graphics.Transform.Magick.FFIHelpers, Graphics.Transform.Magick.Util, Graphics.Transform.Magick.Errors, Graphics.Transform.Magick.Magick
 ghc-options:         -Wall
