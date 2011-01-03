@@ -43,6 +43,7 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               appendImages,
               averageImages,
               cycleColormapImage,
+              destroyImage,
 --              describeImage,
              -- Stuff what displays stuff
               animateImages) where
@@ -118,6 +119,7 @@ newImageColormap   :: Word32 -> HImage
 appendImages       :: ImageOrder -> [HImage] -> HImage
 averageImages      :: [HImage] -> HImage
 cycleColormapImage :: Int -> HImage -> HImage 
+destroyImage       :: HImage -> IO ()
 -- TODO.
 -- describeImage      :: Verbosity -> HImage -> String
 ------------- Stuff what displays stuff
@@ -204,6 +206,8 @@ averageImages []  = unsafePerformIO $ signalException "averageImages: empty list
 cycleColormapImage amount img = sideEffectingOp
   (\ im -> cycle_colormap_image (getImage im) (fromIntegral amount))
   img
+
+destroyImage img = destroy_image $ getImage img
 
 {- 
 TODO.
