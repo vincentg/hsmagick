@@ -6,7 +6,7 @@ category:            Graphics
 license:             BSD3
 license-file:        LICENSE
 author:              Tim Chevalier
-maintainer:          chevalier@alum.wellesley.edu
+maintainer:          vincent@xenbox.fr
 copyright:           (c) Tim Chevalier, 2008
 stability:           alpha
 homepage:            http://community.haskell.org/~tim

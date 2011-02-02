@@ -25,9 +25,10 @@ be obvious what my intentions were. A less ad hoc test framework would
 be better yet.
 
 Please submit bug reports, questions, feedback, complaints, praise,
-and especially patches (including documentation patches) to me at:
+and especially patches (including documentation patches) to the 
+maintainer at:
 
-   chevalier@alum.wellesley.edu
+     vincent_AT_xenbox.fr
 
 I did a lot of this work during the second Haskell Hackathon (Hac II
 '07) in Freiburg in September 2007. I'd like to thank all the
