@@ -20,10 +20,10 @@ import Foreign.C.String
 -- the filename in both the image *and* the info.
 
 -- TODO: don't export the selectors for this.
-data HImage = HImage {image::Ptr HImage_,
+data HImage = HImage {image::ForeignPtr HImage_,
                       otherInfo::ImageNotLoaded}
-data ImageNotLoaded = ImageNotLoaded { imageInfo::Ptr HImageInfo, 
-                                       exceptionInfo::Ptr ExceptionInfo }
+data ImageNotLoaded = ImageNotLoaded { imageInfo::ForeignPtr HImageInfo, 
+                                       exceptionInfo::ForeignPtr ExceptionInfo }
 
 -- A rectangle is represented as a width, height, horizontal offset, and
 -- vertical offset
@@ -73,23 +73,18 @@ data ChannelType =
   MatteChannel
    deriving Enum
 
-getImage :: HImage -> Ptr HImage_
-getImageInfo :: HImage -> Ptr HImageInfo
-getExceptionInfo :: HImage -> Ptr ExceptionInfo
-setImage :: HImage -> Ptr HImage_ -> HImage
+getImage :: HImage -> ForeignPtr HImage_
+getImageInfo :: HImage -> ForeignPtr HImageInfo
+getExceptionInfo :: HImage -> ForeignPtr ExceptionInfo
 
 getImage = image
 getImageInfo = imageInfo.otherInfo
 getExceptionInfo = exceptionInfo.otherInfo
 
-setImage hIm imPtr = hIm{ image = imPtr }
-
-mkUnloadedImage :: Ptr HImageInfo -> Ptr ExceptionInfo -> ImageNotLoaded
+mkUnloadedImage :: ForeignPtr HImageInfo -> ForeignPtr ExceptionInfo -> ImageNotLoaded
 mkUnloadedImage iInfo exInfo = 
    ImageNotLoaded{ imageInfo = iInfo, exceptionInfo = exInfo }
 
-mkImage :: Ptr HImage_ -> ImageNotLoaded -> HImage
-mkImage p info = HImage { image=p, otherInfo=info }
 
 data FilterTypes = 
   UndefinedFilter

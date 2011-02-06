@@ -1,6 +1,8 @@
 module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage, pingImage,
               readInlineImage,
               getFilename,
+              blobToImage,
+              imageToBlob,
              -- transformations
               flipImage,
               flopImage,
@@ -38,6 +40,7 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               compositeImage,
              -- image methods
               allocateImage,
+              destroyImage,
               setImageColormap,
               newImageColormap,
               appendImages,
@@ -49,6 +52,9 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               animateImages) where
 
 #include <magick/api.h>
+
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Unsafe as BS
 
 import Graphics.Transform.Magick.Magick
 import Graphics.Transform.Magick.Types
@@ -138,15 +144,16 @@ readImage = genericReadImage read_image
 -- TODO: has the side effect that it writes the filepath into the image filename
 -- fields. is this the right thing?
 
-writeImage fp hImage = do
+writeImage fp hImage = withForeignPtr (getImage hImage) $ \img_ptr -> do
   -- hmm, side-effect the image info or make a copy of it?
   setFilename hImage fp 
   debug 2 $ "About to write image..."
+  excInfo <- nonFinalizedExceptionInfo ((#ptr Image, exception) img_ptr)
   -- write_image signals an exception by returning 0
-  withExceptions_ (write_image (getImageInfo hImage) (getImage hImage))
+  withExceptions_ (withForeignPtr (getImageInfo hImage) (\ii -> 
+                      (write_image ii img_ptr)))
                    "writeImage: error writing image"
-                   (== 0)
-                   ((#ptr Image, exception) (getImage hImage))
+                   (== 0) excInfo
   debug 2 $ "Wrote the image!"
   ex <- doesFileExist fp
   debug 3 $ fp ++ (if ex then " exists " else " doesn't exist")
@@ -158,34 +165,44 @@ pingImage = genericReadImage ping_image
 ------------- composition ---------------------
 
 compositeImage op x_offset y_offset canvas_image comp_image = sideEffectingOp
-  (\ canvasIm -> withExceptions (composite_image (getImage canvasIm) (toCEnum op) 
-      (getImage comp_image)
-      (fromIntegral x_offset) (fromIntegral y_offset))
+  (\ canvasIm -> withExceptions (
+      withForeignPtr (getImage canvasIm) $ \canvasImPtr ->
+      withForeignPtr (getImage comp_image) $ \comp_image_ptr ->
+        composite_image canvasImPtr (toCEnum op) comp_image_ptr
+                        (fromIntegral x_offset) (fromIntegral y_offset))
        "compositeImage: error compositing image" (== 0)
        (getExceptionInfo canvasIm)) canvas_image
 
 ------------- image methods -------------------
 allocateImage imgNotLoaded = unsafePerformIO $ do
-   imagePtr <- allocate_image $ imageInfo imgNotLoaded
+   imagePtr <- withForeignPtr (imageInfo imgNotLoaded) allocate_image
    if(imagePtr == nullPtr)
      then (signalException "allocateImage returned null")
      else return $ mkImage imagePtr imgNotLoaded
 
+-- optionaly let user destroy image and free memory immediately
+destroyImage :: HImage -> IO ()
+destroyImage (HImage img (ImageNotLoaded info exc)) = do
+  finalizeForeignPtr img
+  finalizeForeignPtr info
+  finalizeForeignPtr exc
+
 setImageColormap clrs hImage = sideEffectingOp 
-  (\ im -> allocate_image_colormap (getImage im) (fromIntegral clrs))
+  (\ im -> applyImageFn1 im allocate_image_colormap (fromIntegral clrs))
   hImage
 
 newImageColormap clrs = unsafePerformIO $ do
   let hImage = allocateImage mkNewUnloadedImage
-  withExceptions_ (allocate_image_colormap (getImage hImage)
-    (fromIntegral clrs)) "setImageColormap: error setting colormap" (== 0)
+  withExceptions_ (applyImageFn1 hImage allocate_image_colormap (fromIntegral clrs)) 
+    "setImageColormap: error setting colormap" (== 0)
     (getExceptionInfo hImage)
   return hImage
 
 -- should require list to be nonempty
 appendImages order images@(img:_) = unsafePerformIO $ do
   linkImagesTogether images
-  iPtr <- withExceptions (append_images (getImage img) (toCEnum order) (getExceptionInfo img)) "appendImage: error appending"
+  iPtr <- withExceptions (applyImageFn1' img append_images (toCEnum order))
+            "appendImage: error appending"
             (== nullPtr) (getExceptionInfo img)
   return $ setImage img iPtr
 appendImages _ [] = unsafePerformIO $ signalException "appendImages: empty list"
@@ -196,7 +213,7 @@ appendImages _ [] = unsafePerformIO $ signalException "appendImages: empty list"
 -- hmm, appendImages and averageImages look a lot alike...
 averageImages images@(img:_) = unsafePerformIO $ do
   linkImagesTogether images
-  iPtr <- withExceptions (average_images (getImage img) (getExceptionInfo img))
+  iPtr <- withExceptions (applyImageFn' img average_images id)
             "averageImages: error averaging" (== nullPtr) (getExceptionInfo img)
   return $ setImage img iPtr
 averageImages []  = unsafePerformIO $ signalException "averageImages: empty list"
@@ -204,7 +221,7 @@ averageImages []  = unsafePerformIO $ signalException "averageImages: empty list
 -- TODO: should really abstract the patterns of "returns boolean" and
 -- "may return null pointer"
 cycleColormapImage amount img = sideEffectingOp
-  (\ im -> cycle_colormap_image (getImage im) (fromIntegral amount))
+  (\ im -> applyImageFn1 im cycle_colormap_image (fromIntegral amount))
   img
 
 destroyImage img = destroy_image $ getImage img
@@ -227,7 +244,8 @@ describeImage verbosity img = unsafePerformIO $ do
 ------------- Stuff what displays stuff
 animateImages images@(img:_) = do
   linkImagesTogether images
-  withExceptions_ (animate_images (getImageInfo img) (getImage img)) 
+  withExceptions_ (withForeignPtr (getImageInfo img) (\ii ->
+                    (applyImageFn img (animate_images ii) id)))
      "animateImages: error animating" (== 0) (getExceptionInfo img)
 animateImages [] = return ()
 ------------- genericReadImage - not exported
@@ -242,11 +260,13 @@ genericReadOp :: (ImageNotLoaded -> IO ()) ->
     String -> IO HImage
 genericReadOp prepareImageInfo theAction errStr = do
    infoPtr <- mkNewExceptionInfo
-   image_info <- clone_image_info nullPtr
+   image_info <- mkNewImageInfo
    let theImage = mkUnloadedImage image_info infoPtr
    prepareImageInfo theImage
-   iPtr <- withExceptions (theAction image_info infoPtr) 
-             errStr (== nullPtr) infoPtr
+   iPtr <- withForeignPtr image_info $ \ii_ptr -> 
+           withForeignPtr infoPtr    $ \exc_ptr ->
+             withExceptions (theAction ii_ptr exc_ptr) 
+                           errStr (== nullPtr) infoPtr
    return $ mkImage iPtr theImage
 
 ----------------------------------------------  
@@ -273,8 +293,7 @@ minifyImage  = doTransform minify_image
 
 -- rotates an image by an arbitrary number of degrees
 rotateImage degrees hImage = doTransformIO
-  (rotate_image (getImage hImage) (realToFrac degrees) 
-    (getExceptionInfo hImage))
+  (applyImageFn1' hImage rotate_image (realToFrac degrees))
   hImage
 
 affineTransform affineMatrix hImage = unsafePerformIO $ do
@@ -283,8 +302,7 @@ affineTransform affineMatrix hImage = unsafePerformIO $ do
     (\ matrixP -> do
           poke matrixP affineMatrix
           return $ doTransformIO
-                    (affine_transform (getImage hImage) matrixP
-                     (getExceptionInfo hImage))
+                    (applyImageFn1' hImage affine_transform matrixP)
                     hImage)
 
 -- cuts the specified rectangle out of the image,
@@ -341,16 +359,17 @@ shearImage xFactor yFactor hImage = doTransformIO_XY_real shear_image
 -- the stupid argument names are due to these names being already taken
 -- as record fields.
 resizeImage cols rws fltr blr hImage = 
-   doTransformIO (resize_image (getImage hImage) (fromIntegral cols) 
-                   (fromIntegral rws) (toCEnum fltr) 
-                   (realToFrac blr) (getExceptionInfo hImage))
+   doTransformIO (applyImageFn' hImage resize_image $ \f -> f 
+                    (fromIntegral cols) 
+                     (fromIntegral rws) (toCEnum fltr) 
+                     (realToFrac blr))
       hImage
 ------------ enhancements
 -- TODO: the contrastImage call only increases or decreases by a
 -- given increment. perhaps want to change our API to specify
 -- an amount of contrast
 contrastImage increaseOrDecrease hImage = sideEffectingOp 
-  (\ im -> contrast_image (getImage im) sharpen) hImage 
+  (\ im -> applyImageFn1 im contrast_image sharpen) hImage 
      where sharpen = case increaseOrDecrease of
                        IncreaseContrast -> 1
                        DecreaseContrast -> 0
@@ -359,27 +378,29 @@ equalizeImage = simpleOp equalize_image
 normalizeImage = simpleOp normalize_image
 
 gammaImage (PixelPacket { red=gRed, green=gGreen, blue=gBlue }) hImage = 
-  sideEffectingOp (\ im -> withCString levelStr (gamma_image (getImage im))) 
+  sideEffectingOp (\ im -> applyImageFn im gamma_image $ withCString levelStr) 
        hImage
     where levelStr = commaSep [gRed, gGreen, gBlue]
 
 levelImage (Level { black=lBlack, mid=lMid, white=lWhite }) hImage =
-    sideEffectingOp (\ im -> withCString levelStr (level_image (getImage im)))
+    sideEffectingOp (\ im -> 
+      applyImageFn im level_image $ withCString levelStr)
          hImage
              where levelStr = commaSep [lBlack, lMid, lWhite]
 
 levelImageChannel chanTy (Level { black=lBlack, mid=lMid, white=lWhite }) 
   hImage = sideEffectingOp (\ im -> 
-    level_image_channel (getImage im) (toCEnum chanTy) 
-         (realToFrac lBlack) (realToFrac lMid) (realToFrac lWhite)) hImage
+            applyImageFn im level_image_channel $ \ f ->
+    f (toCEnum chanTy) (realToFrac lBlack) 
+      (realToFrac lMid) (realToFrac lWhite)) hImage
 
 modulateImage (Modulation{ brightness=b, saturation=s, hue=h }) hImage =
     sideEffectingOp (\ im ->
-       withCString modStr (modulate_image (getImage im))) hImage
+      applyImageFn im modulate_image $ withCString modStr) hImage
      where modStr = commaSep [b, s, h]
 
 negateImage whatToNegate hImage = 
-    (sideEffectingOp (\ im -> negate_image (getImage im) whatToDo) hImage)
+    (sideEffectingOp (\ im -> applyImageFn1 im negate_image whatToDo) hImage)
        where whatToDo = case whatToNegate of
                           AllPixels -> 0
                           GrayscalePixels -> 1  
@@ -399,15 +420,16 @@ constituteImage pixMap pixels = unsafePerformIO $ do
    debug 3 $ "width = " ++ show wdth ++ " height = " ++ show hght ++ " sz = " ++ (show (pixelSize pixMap) ++ " len = " ++ show (length aScanline))
    iPtr <- withExceptions (withArray (map marshalPixel (concat pixels)) (\ pixelArray ->
       withCString (show pixMap) $  
-        (\ mapStr -> constitute_image 
-                       wdth
-                       -- this is kind of weak... the pixmap
-                       -- says how many numbers represent each pixel. seems bad.
-                       -- we should have a better type system for this.
-                       hght
-                       mapStr 
-                       (toCEnum (storageType (head aScanline)))
-                       pixelArray eInfo))) "constituteImage: error" (== nullPtr) eInfo
+        (\ mapStr -> withForeignPtr eInfo $
+                       constitute_image 
+                         wdth
+                         -- this is kind of weak... the pixmap
+                         -- says how many numbers represent each pixel. seems bad.
+                         -- we should have a better type system for this.
+                         hght
+                         mapStr 
+                         (toCEnum (storageType (head aScanline)))
+                         pixelArray))) "constituteImage: error" (== nullPtr) eInfo
    iInfo <- mkNewImageInfo
    return $ mkImage iPtr (mkUnloadedImage iInfo eInfo) 
    -- TODO: freeing pixelArray and other memory?
@@ -424,10 +446,11 @@ dispatchImage pixMap storType (Rectangle{ width=cols, height=rws,
      (allocaArray len (\ pixelArray ->
        withCString (show pixMap) $
          (\ mapStr -> do
-             withExceptions_ (dispatch_image (getImage hImage) (fromIntegral x_offset) 
-              (fromIntegral y_offset) (fromIntegral cols) 
-              (fromIntegral rws) mapStr (toCEnum storType) pixelArray
-              (getExceptionInfo hImage)) "dispatchImage: error" (== 0) 
+             withExceptions_ (applyImageFn' hImage dispatch_image $ \f -> 
+               f (fromIntegral x_offset) (fromIntegral y_offset) 
+                  (fromIntegral cols) (fromIntegral rws) mapStr 
+                  (toCEnum storType) pixelArray) 
+                "dispatchImage: error" (== 0) 
                 (getExceptionInfo hImage)
              pixelList <- peekArray (fromIntegral len) pixelArray
              let blobs = map unmarshalPixel pixelList
@@ -465,8 +488,8 @@ importPixelImageArea quantumType quantumSize pixels options hImage =
         (\ pixelArray -> (alloca (\ importInfo -> (alloca (\ optionsPtr -> do
            optsPtr <- maybeToPtr options optionsPtr
            -- this side-effects the image, so we need to make a copy
-           res <- (import_image_pixel_area (getImage theImage) 
-             (toCEnum quantumType) (fromIntegral quantumSize) pixelArray optsPtr
+           res <- (applyImageFn theImage import_image_pixel_area $ \f -> 
+             f (toCEnum quantumType) (fromIntegral quantumSize) pixelArray optsPtr
              importInfo) 
            bytes_imported <- (#peek ImportPixelAreaInfo, bytes_imported) importInfo
            assertM (bytes_imported == length pixels) 
@@ -478,7 +501,7 @@ readInlineImage base64content = unsafePerformIO $ do
   genericReadOp (const (return ())) 
    (\ image_info exception_info ->
        (withCString cleanedUpString (\ content_str ->
-             read_inline_image image_info content_str exception_info)))
+           read_inline_image image_info content_str exception_info)))
    "readInlineImage: error reading inline content"
       where cleanedUpString = insertComma (deleteNewlines 
                    (deleteEqualsSignLine base64content))
@@ -496,23 +519,50 @@ readInlineImage base64content = unsafePerformIO $ do
                  (firstLine:secondLine:restLines) -> 
                     unlines (firstLine:((',':secondLine):restLines))
                  _ -> s
+
+blobToImage :: BS.ByteString -> HImage
+blobToImage bs = unsafePerformIO $ do
+    genericReadOp (const (return ()))
+      (\image_info exception_info ->
+        BS.unsafeUseAsCStringLen bs (\(ptr, len) ->
+          blob_to_image image_info (castPtr ptr) (fromIntegral len) 
+                        exception_info))
+      "blobToImage: error loading image from blob"
+
+imageToBlob :: HImage -> BS.ByteString
+imageToBlob img = unsafePerformIO $ 
+    withTmpImageInfo $ \imgInfo ->
+    alloca $ \sizePtr -> do
+        excInfo <- mkNewExceptionInfo
+        dat <- withExceptions (applyImageFn1' img (image_to_blob imgInfo) sizePtr)
+                               "imageToBlob: unable to encode image"
+                               (==nullPtr)
+                               excInfo
+        len <- fromIntegral `fmap` peek sizePtr
+        BS.unsafePackCStringFinalizer (castPtr dat) len (free dat)
+
 --------- helpers (private) ------------
 simpleOp :: (Ptr HImage_ -> IO CUInt) -> HImage -> HImage
-simpleOp op im = sideEffectingOp (op.getImage) im
+simpleOp op im = sideEffectingOp 
+                  (\hImage -> 
+                    withForeignPtr (getImage hImage) $ \ii_ptr -> 
+                      op ii_ptr) im
 
 withRectangle :: Rectangle -> 
  (Ptr HImage_ -> Ptr Rectangle -> Ptr ExceptionInfo -> IO (Ptr HImage_)) ->
  HImage -> IO HImage
 withRectangle rect transform hImage = do
-  -- Does this actually free the memory?
+  -- Does this actually free the memory? 
+  -- Steffen: Yes, this will free the memory
   (rectPtr::ForeignPtr Rectangle) <- mallocForeignPtr
   -- This was causing a segfault so it\'s temporarily commented out.
   -- TODO: Worry about memory freeing.
+  -- Steffen: this is not needed, mallocForeignPtr already installs a
+  --          correct finalizer
   --addForeignPtrFinalizer p_free rectPtr
   withForeignPtr rectPtr $ 
     (\ rectP -> do 
        poke rectP rect
        return $ doTransformIO
-                  (transform (getImage hImage) rectP 
-                     (getExceptionInfo hImage))
+                  (applyImageFn1' hImage transform rectP)
                   hImage)

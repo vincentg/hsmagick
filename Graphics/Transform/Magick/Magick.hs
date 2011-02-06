@@ -4,6 +4,7 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               module Control.Monad,
               initialize_magick,
               get_exception_info,
+              destroy_exception_info,
               clone_image_info,
               read_image,
               write_image,
@@ -39,6 +40,9 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               -- constitution
               constitute_image,
               dispatch_image,
+              -- blob
+              blob_to_image,
+              image_to_blob,
               --export_image_pixel_area,
               export_pixel_area_options_init,
               import_image_pixel_area,
@@ -58,6 +62,7 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               cycle_colormap_image, 
               describe_image, 
               destroy_image, 
+              finalize_image,
               destroy_image_info, 
               get_image_clip_mask, 
               get_image_depth, 
@@ -106,6 +111,9 @@ foreign import ccall "static magick/api.h InitializeMagick"
 foreign import ccall "static magick/api.h GetExceptionInfo"
     get_exception_info :: Ptr ExceptionInfo -> IO ()
 
+foreign import ccall "static magick/api.h DestroyExceptionInfo"
+    destroy_exception_info :: Ptr ExceptionInfo -> IO ()
+
 foreign import ccall "static magick/api.h CloneImageInfo"
     clone_image_info :: Ptr HImageInfo -> IO (Ptr HImageInfo)
 
@@ -147,6 +155,13 @@ foreign import ccall "static magick/api.h PingImage"
     ping_image :: Ptr HImageInfo -> Ptr ExceptionInfo -> IO (Ptr HImage_)
 foreign import ccall "static magick/api.h ReadInlineImage"
     read_inline_image :: Ptr HImageInfo -> CString -> Ptr ExceptionInfo -> IO (Ptr HImage_)
+
+----------------- Blob
+foreign import ccall "static magick/api.h BlobToImage"
+    blob_to_image :: Ptr HImageInfo -> Ptr CUChar -> CSize -> Ptr ExceptionInfo -> IO (Ptr HImage_)
+
+foreign import ccall "static magick/api.h ImageToBlob"
+    image_to_blob :: Ptr HImageInfo -> Ptr HImage_ -> Ptr CSize -> Ptr ExceptionInfo -> IO (Ptr CUChar)
 
 ----------------- Transformations
 
@@ -278,6 +293,9 @@ foreign import ccall "static magick/api.h DescribeImage"
 
 foreign import ccall "static magick/api.h DestroyImage"
     destroy_image :: Ptr HImage_ -> IO ()
+
+foreign import ccall "static magick/api.h &DestroyImage"
+    finalize_image :: FunPtr(Ptr HImage_ -> IO ())
 
 foreign import ccall "static magick/api.h DestroyImageInfo"
     destroy_image_info :: Ptr HImageInfo -> IO ()

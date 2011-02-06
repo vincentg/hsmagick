@@ -3,6 +3,12 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   withExceptions_,
                   setField,
                   (-->),
+                  mkImage,
+                  setImage,
+                  applyImageFn,
+                  applyImageFn',
+                  applyImageFn1,
+                  applyImageFn1',
                   setFilename,
                   getFilename,
                   setPage,
@@ -13,7 +19,13 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   sideEffectingOp,
                   linkImagesTogether,
                   mkNewExceptionInfo,
+                  nonFinalizedExceptionInfo,
+                  destroyExceptionInfo,
+                  withTmpExceptionInfo,
                   mkNewImageInfo,
+                  mkFinalizedImageInfo,
+                  destroyImageInfo,
+                  withTmpImageInfo,
                   toCEnum,
                   hImageRows,
                   hImageColumns,
@@ -27,10 +39,22 @@ import Graphics.Transform.Magick.Magick
 import Graphics.Transform.Magick.Errors
 import Graphics.Transform.Magick.Util
 
+import qualified Foreign.Concurrent as FC (newForeignPtr)
+
 import Control.Exception
 import Prelude hiding (maximum, minimum)
 
 -- functions to help with doing FFI 
+
+setImage :: HImage -> Ptr HImage_ -> HImage
+setImage hIm imPtr = unsafePerformIO $ do
+    i <- newForeignPtr finalize_image imPtr
+    return hIm{ image = i }
+
+mkImage :: Ptr HImage_ -> ImageNotLoaded -> HImage
+mkImage p info = unsafePerformIO $ do
+    i <- newForeignPtr finalize_image p
+    return $ HImage { image=i, otherInfo=info }
 
 -------------- Strings/char arrays  
 -- This is really terrible. How to avoid these casts?
@@ -62,10 +86,25 @@ nullChar :: CChar
 nullChar = castCharToCChar '\0'
 
 -------- sets a field in something Storable --------
-setField :: Storable a => (a -> a) -> Ptr a -> IO ()
-setField modify p = peek p >>= ((poke p).modify)
-(-->) :: Storable a => Ptr a -> (a -> b) -> b
-(-->) p sel = unsafePerformIO $ peek p >>= (return.sel)
+
+class PtrAccessors ptr where
+    setField :: Storable a => (a -> a) -> ptr a -> IO ()
+    (-->) :: Storable a => ptr a -> (a -> b) -> b
+
+instance PtrAccessors Ptr where
+    setField modify p = peek p >>= ((poke p).modify)
+    p --> sel = unsafePerformIO $ peek p >>= (return.sel)
+
+instance PtrAccessors ForeignPtr where
+    setField modify p = withForeignPtr p (setField modify)
+    p --> sel = unsafePerformIO $ withForeignPtr p (\fp ->
+                  peek fp >>= (return.sel))
+  
+-- setField :: Storable a => (a -> a) -> Ptr a -> IO ()
+-- setField modify p = peek p >>= ((poke p).modify)
+-- (-->) :: Storable a => Ptr a -> (a -> b) -> b
+-- (-->) p sel = unsafePerformIO $ peek p >>= (return.sel)
+
 ---------------------------------
 
 -- Function for handling exceptions from GraphicsMagick calls.
@@ -74,8 +113,8 @@ setField modify p = peek p >>= ((poke p).modify)
 -- determine whether the result of the call was erroneous, as well as a pointer
 -- to the exception info that the action will set.
 -- The checker function is assumed to return True if there was an error.
-withExceptions :: IO a -> String -> (a -> Bool) -> (Ptr ExceptionInfo) -> IO a
-withExceptions action errMsg checker excPtr = do
+withExceptions :: IO a -> String -> (a -> Bool) -> (ForeignPtr ExceptionInfo) -> IO a
+withExceptions action errMsg checker excPtr_ = withForeignPtr excPtr_ $ \excPtr -> do
   result <- action
   if (checker result)
     then do
@@ -85,13 +124,29 @@ withExceptions action errMsg checker excPtr = do
        signalException errMsg
     else return result
 -- Same as withExceptions, but throws away the result
-withExceptions_ :: IO a -> String -> (a -> Bool) -> Ptr ExceptionInfo -> IO ()
+withExceptions_ :: IO a -> String -> (a -> Bool) -> ForeignPtr ExceptionInfo -> IO ()
 withExceptions_ action errMsg checker excPtr =
   withExceptions action errMsg checker excPtr >> return ()
  
 -- Note: for a plain Image -> Exception -> Image function, we should
 -- call doTransform. For transformations that take extra arguments,
 -- we use doTransformIO.
+
+applyImageFn :: HImage -> (Ptr HImage_ -> a) -> (a -> IO b) -> IO b
+applyImageFn hImage fn run = withForeignPtr (getImage hImage) $ \i_ptr ->
+                               run $ fn i_ptr
+
+applyImageFn' :: HImage -> (Ptr HImage_ -> t) -> (t -> Ptr ExceptionInfo -> IO b) -> IO b
+applyImageFn' hImage fn run = withForeignPtr (getImage hImage) $ \i_ptr ->
+                              withForeignPtr (getExceptionInfo hImage) $ \e_ptr ->
+                               run (fn i_ptr) e_ptr
+
+applyImageFn1 :: HImage -> (Ptr HImage_ -> t -> IO b) -> t -> IO b
+applyImageFn1 hImage fn v = applyImageFn hImage fn $ \f -> f v
+                           
+
+applyImageFn1' :: HImage -> (Ptr HImage_ -> t -> Ptr ExceptionInfo -> IO b) -> t -> IO b
+applyImageFn1' hImage fn v = applyImageFn' hImage fn $ \f -> f v
 
 -- doTransform takes an image transformation that takes an 
 -- image pointer and an exception pointer as arguments, and applies it
@@ -101,7 +156,8 @@ withExceptions_ action errMsg checker excPtr =
 doTransform :: (Ptr HImage_ -> Ptr ExceptionInfo 
                              -> IO (Ptr HImage_)) -> HImage -> HImage
 doTransform transform hImage = 
-  doTransformIO (transform (getImage hImage) excInfo) hImage
+  doTransformIO (applyImageFn hImage transform $ withForeignPtr excInfo)
+                hImage
        where excInfo = getExceptionInfo hImage      
 
 -- doTransformIO takes an arbitrary IO action that returns an HImage_
@@ -123,8 +179,8 @@ doTransformIO_XY :: (Integral a, Integral b) =>
   (Ptr HImage_ -> a -> a -> Ptr ExceptionInfo -> IO (Ptr HImage_)) ->
   HImage -> b -> b -> HImage 
 doTransformIO_XY transform hImage x_ y_ =
-  doTransformIO (transform (getImage hImage) (fromIntegral x_) (fromIntegral y_)
-                   (getExceptionInfo hImage))
+  doTransformIO (applyImageFn' hImage transform $ \f ->
+                    f (fromIntegral x_) (fromIntegral y_))
       hImage
 
 -- Ugh.
@@ -132,8 +188,7 @@ doTransformIO_XY_real :: (Real b, Fractional a) =>
   (Ptr HImage_ -> a -> a -> Ptr ExceptionInfo -> IO (Ptr HImage_)) ->
   HImage -> b -> b -> HImage 
 doTransformIO_XY_real transform hImage x_ y_ =
-  doTransformIO (transform (getImage hImage) (realToFrac x_) (realToFrac y_)
-                   (getExceptionInfo hImage))
+  doTransformIO (applyImageFn' hImage transform $ \f -> f (realToFrac x_) (realToFrac y_))
       hImage
 
 ------------------ creating image sequences -----------
@@ -141,10 +196,11 @@ linkImagesTogether :: [HImage] -> IO ()
 linkImagesTogether [] = signalException $ "internal error: linkImagesTogether:"
                          ++ " empty list"
 linkImagesTogether (img:images) = do
-         _ <- foldM (\ bigImage smallImage -> do
-                    (#poke Image, next) (getImage bigImage) 
-                         (getImage smallImage)
-                    return smallImage) 
+         _ <- foldM (\ bigImage smallImage -> 
+                       withForeignPtr (getImage bigImage) $ \bi ->
+                       withForeignPtr (getImage smallImage) $ \si -> do
+                       (#poke Image, next) bi si
+                       return smallImage) 
                     img
                     images
          debug 3 $ "Checking assertion..."
@@ -155,8 +211,8 @@ linkImagesTogether (img:images) = do
          assertM (allGood && lastNull)
               "flattenImage: internal error: couldn't create sequence"
              where nextImageNotNull hImage = do
-                      debug 3 $ "peeking: " ++ show (getImage hImage)
-                      nextIm <- (#peek Image, next) (getImage hImage)
+                      -- debug 3 $ "peeking: " ++ show (getImage hImage)
+                      nextIm <- withForeignPtr (getImage hImage) $ (#peek Image, next)
                       debug 3 $ "peeked! " ++ show nextIm
                       return $ nextIm /= nullPtr
      
@@ -687,8 +743,8 @@ maxTextExtent :: Int
 maxTextExtent = 2053
 
 hImageRows, hImageColumns :: HImage -> Word
-hImageRows    = fromIntegral.columns.unsafePerformIO.peek.getImage
-hImageColumns = fromIntegral.rows.unsafePerformIO.peek.getImage
+hImageRows    i = unsafePerformIO $ withForeignPtr (getImage i) $ return.fromIntegral.columns.unsafePerformIO.peek
+hImageColumns i = unsafePerformIO $ withForeignPtr (getImage i) $ return.fromIntegral.rows.unsafePerformIO.peek
 
 --------------- Filename handling
 
@@ -712,7 +768,7 @@ instance HasFilename HImage where
 
 ------------- Page setting
 setPage :: HImage -> Rectangle -> IO ()
-setPage hImage rect = (#poke Image, page) (getImage hImage) rect
+setPage hImage rect = applyImageFn hImage (#poke Image, page) $ \f -> f rect
 
 ------------- Dealing with side-effecting GraphicsMagick functions
 sideEffectingOp :: (HImage -> IO CUInt) -> HImage -> HImage
@@ -725,28 +781,79 @@ sideEffectingOp impureFun = (\ hImage -> unsafePerformIO $ do
 --------- Utils
 -- The type emphasizes that we're doing something wantonly
 -- non-referentially-transparent
+
+
+cloneImageInfo :: ForeignPtr HImageInfo -> IO (ForeignPtr HImageInfo)
+cloneImageInfo fp = withForeignPtr fp $ \p -> 
+    mkFinalizedImageInfo =<< clone_image_info p
+
 cloneImage :: HImage -> IO HImage
 cloneImage hImage = do
-   clonedImagePtr      <- cloneImagePtr (getImage hImage)
-   clonedImageInfo     <- clone_image_info (getImageInfo hImage)
+   clonedImagePtr      <- withForeignPtr (getImage hImage) cloneImagePtr
+   clonedImageInfo     <- cloneImageInfo (getImageInfo hImage)
    clonedExceptionInfo <- mkNewExceptionInfo
    return $ mkImage clonedImagePtr (mkUnloadedImage clonedImageInfo clonedExceptionInfo)
                              -- 0 and 0 say that the cloned image should have the same
                              -- size as the original. 1 says this should be an orphan 
                              -- image (not part of a list.)
-     where cloneImagePtr p = withExceptions (clone_image p 0 0 1 (getExceptionInfo hImage))
+     where cloneImagePtr p = withExceptions (withForeignPtr (getExceptionInfo hImage) $
+                                              clone_image p 0 0 1)
                                        "cloneImagePtr: error cloning image"
                                        (== nullPtr)
                                        (getExceptionInfo hImage)
 ----------- Exceptions
-mkNewExceptionInfo :: IO (Ptr ExceptionInfo)
-mkNewExceptionInfo = do
+
+mkNewExceptionInfo :: IO (ForeignPtr ExceptionInfo)
+mkNewExceptionInfo = mkFinalizedExceptionInfo =<< mkNewExceptionInfo_
+
+mkFinalizedExceptionInfo :: Ptr ExceptionInfo -> IO (ForeignPtr ExceptionInfo)
+mkFinalizedExceptionInfo p = FC.newForeignPtr p (destroyExceptionInfo p)
+
+nonFinalizedExceptionInfo :: Ptr ExceptionInfo -> IO (ForeignPtr ExceptionInfo)
+nonFinalizedExceptionInfo = newForeignPtr_ 
+
+mkNewExceptionInfo_ :: IO (Ptr ExceptionInfo)
+mkNewExceptionInfo_ = do
   infoPtr <- malloc
   get_exception_info infoPtr
   return infoPtr
+
+destroyExceptionInfo :: Ptr ExceptionInfo -> IO ()
+destroyExceptionInfo infoPtr = do
+    destroy_exception_info infoPtr
+    free infoPtr
+
+withTmpExceptionInfo :: (Ptr ExceptionInfo -> IO a) -> IO a
+withTmpExceptionInfo action = do
+  infoPtr <- mkNewExceptionInfo_
+  result <- action infoPtr
+  result `seq` destroyExceptionInfo infoPtr
+  return result
+
 ----------- Image info
-mkNewImageInfo :: IO (Ptr HImageInfo)
-mkNewImageInfo = clone_image_info nullPtr
+
+mkNewImageInfo :: IO (ForeignPtr HImageInfo)
+mkNewImageInfo = mkFinalizedImageInfo =<< mkNewImageInfo_
+
+mkFinalizedImageInfo :: Ptr HImageInfo -> IO (ForeignPtr HImageInfo)
+mkFinalizedImageInfo = newForeignPtr imageInfoFinalizer
+
+mkNewImageInfo_ :: IO (Ptr HImageInfo)
+mkNewImageInfo_ = clone_image_info nullPtr
+
+destroyImageInfo :: Ptr HImageInfo -> IO ()
+destroyImageInfo = destroy_image_info
+
+foreign import ccall "static magick/api.h &DestroyImageInfo"
+    imageInfoFinalizer :: FunPtr (Ptr HImageInfo -> IO ())
+
+withTmpImageInfo :: (Ptr HImageInfo -> IO a) -> IO a
+withTmpImageInfo action = do
+    imgInfo <- mkNewImageInfo_
+    result <- action imgInfo
+    result `seq` destroy_image_info imgInfo
+    return result
+
 ----------- Both
 mkNewUnloadedImage :: ImageNotLoaded
 mkNewUnloadedImage = unsafePerformIO $ do
@@ -761,3 +868,4 @@ toCEnum = fromIntegral.fromEnum
 maybeToPtr :: Storable a => Maybe a -> Ptr a -> IO (Ptr a)
 maybeToPtr Nothing _      = return nullPtr
 maybeToPtr (Just stuff) p = poke p stuff >> return p
+
