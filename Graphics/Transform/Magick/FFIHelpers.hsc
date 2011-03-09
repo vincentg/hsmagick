@@ -43,6 +43,7 @@ import qualified Foreign.Concurrent as FC (newForeignPtr)
 
 import Control.Exception
 import Prelude hiding (maximum, minimum)
+import Control.Monad
 
 -- functions to help with doing FFI 
 

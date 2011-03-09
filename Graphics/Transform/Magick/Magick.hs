@@ -1,7 +1,6 @@
 module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               module Foreign,
               module Foreign.C.String,
-              module Control.Monad,
               initialize_magick,
               get_exception_info,
               destroy_exception_info,
@@ -96,7 +95,6 @@ import Graphics.Transform.Magick.Types
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
-import Control.Monad
 
 -- The internal interface to the GraphicsMagick library. This
 -- module should mostly (if not entirely) contain import declarations
