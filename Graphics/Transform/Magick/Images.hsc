@@ -40,7 +40,6 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               compositeImage,
              -- image methods
               allocateImage,
-              destroyImage,
               setImageColormap,
               newImageColormap,
               appendImages,
@@ -181,7 +180,6 @@ allocateImage imgNotLoaded = unsafePerformIO $ do
      else return $ mkImage imagePtr imgNotLoaded
 
 -- optionaly let user destroy image and free memory immediately
-destroyImage :: HImage -> IO ()
 destroyImage (HImage img (ImageNotLoaded info exc)) = do
   finalizeForeignPtr img
   finalizeForeignPtr info
@@ -223,8 +221,6 @@ averageImages []  = unsafePerformIO $ signalException "averageImages: empty list
 cycleColormapImage amount img = sideEffectingOp
   (\ im -> applyImageFn1 im cycle_colormap_image (fromIntegral amount))
   img
-
-destroyImage img = destroy_image $ getImage img
 
 {- 
 TODO.
