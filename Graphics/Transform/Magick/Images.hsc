@@ -72,6 +72,8 @@ import System.Directory
 readImage        :: FilePath -> IO HImage
 writeImage       :: FilePath -> HImage -> IO ()
 pingImage        :: FilePath -> IO HImage
+-- | initializeMagick must be invoked by the user program before making use
+-- of the library functions.
 initializeMagick :: IO ()
 --------- Transformations
 flipImage, flopImage    :: HImage -> HImage
