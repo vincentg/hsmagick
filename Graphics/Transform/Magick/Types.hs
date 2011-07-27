@@ -421,3 +421,114 @@ data HImage_ = HImage_ {
   list         :: CIntPtr,
   signature_   :: CULong
 }
+
+data CSegmentInfo = CSegmentInfo {
+	cx1 :: CDouble,
+	cy1	:: CDouble,
+	cx2	:: CDouble,
+	cy2	:: CDouble
+}
+
+data CRectangle = CRectangle {
+	rect_width	:: CSize,
+	rect_height	:: CSize,
+	rect_x		:: CSize,
+	rect_y		:: CSize
+}
+
+data PixelInfo = PixelInfo {
+	pixel_storage_class	:: CUInt,--enum
+	pixel_colorspace		:: CUInt,--enum
+	pixel_matte			:: CUInt,--enum
+	pixel_fuzz			:: CDouble,--enum
+	pixel_depth			:: CSize,
+	pixel_red				:: CDouble,
+	pixel_green			:: CDouble,
+	pixel_blue			:: CDouble,
+	pixel_alpha			:: CDouble,
+	pixel_black			:: CDouble,
+	pixel_index			:: CDouble
+}
+
+data StopInfo = StopInfo{
+	stop_color	:: PixelInfo,
+	stop_offset	:: CDouble
+}	
+
+data CPoint = CPoint {
+	px	:: CDouble,
+	py	:: CDouble
+}
+
+data GradientInfo = GradientInfo {
+	g_type	:: CUInt, --enum
+	g_bounding_box	::CRectangle,
+	g_gradient_vector	::CSegmentInfo,
+	g_stops	::	Ptr StopInfo,
+	g_number_stops 	:: CSize,
+	g_spread	:: CUInt,--enum
+	g_debug	::CUInt,--enum/boolean
+	g_gradient_signature:: CSize,
+	g_center	:: CPoint,
+	g_radius	:: CDouble
+}
+
+data ElementReference = ElementReference {
+  eid	:: CString,
+  etype	:: CUInt, --enum
+  egradient:: GradientInfo,
+  previous_element	:: Ptr ElementReference,
+  next_element		:: Ptr ElementReference
+}
+
+--todo: give enumerators explicit types
+data DrawInfo = DrawInfo {
+  d_primitive	:: CString, --todo - what are these two?
+  d_geometry	:: CString,
+  d_viewbox	:: Rectangle,
+  d_affine	:: AffineMatrix,
+  d_gravity	:: GravityType,
+  d_fill		:: PixelPacketByte,
+  d_stroke	:: PixelPacketByte,
+  d_stroke_width :: CDouble,
+  d_gradient	:: GradientInfo,
+  d_fill_pattern :: Ptr Image,
+  d_stroke_pattern ::Ptr Image,
+  d_stroke_antialias :: CUInt, --enum/boolean
+  d_text_antialias  :: CUInt,  --enum/boolean
+  d_fill_rule	:: CUInt,--enum
+  d_linecap	:: CUInt,--enum
+  d_linejoin	:: CUInt,--enum
+  d_miterlimit:: CSize,
+  d_dash_offset:: CDouble,
+  d_decorate	:: CUInt,--enum
+  d_compose	:: CUInt,--enum
+  d_text		:: CString,
+  d_face		:: CSize,
+  d_font		:: CString,
+  d_metrics	:: CString,
+  d_family	:: CString,
+  d_style		:: CUInt, --enum
+  d_stretch	:: CUInt, --enum
+  d_weight	:: CSize,
+  d_encoding	:: CString,
+  d_pointsize	:: CDouble,
+  d_density	:: CString,
+  d_align		:: CUInt, --enum
+  d_undercolor:: PixelPacketByte,
+  d_border_color:: PixelPacketByte,
+  d_server_name	:: CString,
+  d_dash_pattern	:: Ptr Double,
+  d_clip_mask	:: CString,
+  d_bounds	:: CSegmentInfo,
+  d_clip_units	:: CUInt, --eneum
+  d_alpha		:: CUShort,
+  d_render	:: CUInt, --enum/boolean
+  d_element_reference ::  ElementReference,
+  d_debug		:: CUInt, --enum/boolean
+  d_signature	:: CSize,
+  d_kerning	:: CDouble,
+  d_interword_spacing:: CDouble,
+  d_interline_spacind :: CDouble,
+  d_direction	:: CUInt--enum
+}
