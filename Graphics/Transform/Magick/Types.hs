@@ -430,10 +430,10 @@ data CSegmentInfo = CSegmentInfo {
 }
 
 data CRectangle = CRectangle {
-	rect_width	:: CSize,
-	rect_height	:: CSize,
-	rect_x		:: CSize,
-	rect_y		:: CSize
+	rect_width	:: CUInt,
+	rect_height	:: CUInt,
+	rect_x		:: CInt,
+	rect_y		:: CInt
 }
 
 data PixelInfo = PixelInfo {
@@ -477,22 +477,49 @@ data ElementReference = ElementReference {
   eid	:: CString,
   etype	:: CUInt, --enum
   egradient:: GradientInfo,
+  esignature :: CULong,
   previous_element	:: Ptr ElementReference,
   next_element		:: Ptr ElementReference
 }
 
+data DrawContext = DrawContext {
+  c_image		:: Ptr Image,
+  c_mvg			:: CString,
+  c_mvg_alloc	:: CSize,
+  c_mvg_length	:: CSize,
+  c_mvg_width	:: CUInt,
+  c_pattern_id	:: CString,
+  c_pattern_bounds:: CRectangle,
+  c_patteern_offset::CSize,
+  c_index		:: CUInt,
+  c_graphic_context:: Ptr (Ptr DrawInfo),
+  c_filter_off	:: CInt,
+  c_indent_depth:: CUInt,
+  c_path_operation:: CUInt,--enum
+  c_path_mode	:: CUInt,--enum
+  c_signature	:: CULong
+}
+
+data CAffineMatrix = CAffineMatrix { c_sx::CDouble,
+                                   c_rx::CDouble,
+                                   c_ry::CDouble,
+                                   c_sy::CDouble,
+                                   c_tx::CDouble,
+                                   c_ty::CDouble }
+
+--  ok kids. check your dependencies before you implement the wrong giant struct
 --todo: give enumerators explicit types
 data DrawInfo = DrawInfo {
   d_primitive	:: CString, --todo - what are these two?
   d_geometry	:: CString,
-  d_viewbox	:: Rectangle,
-  d_affine	:: AffineMatrix,
-  d_gravity	:: GravityType,
+  d_affine	:: CAffineMatrix,
+  d_gravity	:: CUInt,--enum
   d_fill		:: PixelPacketByte,
   d_stroke	:: PixelPacketByte,
   d_stroke_width :: CDouble,
   d_gradient	:: GradientInfo,
   d_fill_pattern :: Ptr Image,
+  d_tile		:: Ptr Image,
   d_stroke_pattern ::Ptr Image,
   d_stroke_antialias :: CUInt, --enum/boolean
   d_text_antialias  :: CUInt,  --enum/boolean
@@ -504,13 +531,10 @@ data DrawInfo = DrawInfo {
   d_decorate	:: CUInt,--enum
   d_compose	:: CUInt,--enum
   d_text		:: CString,
-  d_face		:: CSize,
   d_font		:: CString,
-  d_metrics	:: CString,
-  d_family	:: CString,
-  d_style		:: CUInt, --enum
-  d_stretch	:: CUInt, --enum
-  d_weight	:: CSize,
+  d_family		:: CString,
+  d_stretch		:: CUInt,--enum
+  d_weight	:: CULong,
   d_encoding	:: CString,
   d_pointsize	:: CDouble,
   d_density	:: CString,
@@ -522,13 +546,9 @@ data DrawInfo = DrawInfo {
   d_clip_mask	:: CString,
   d_bounds	:: CSegmentInfo,
   d_clip_units	:: CUInt, --eneum
-  d_alpha		:: CUShort,
+  d_opacity	:: CUShort,
   d_render	:: CUInt, --enum/boolean
-  d_element_reference ::  ElementReference,
   d_debug		:: CUInt, --enum/boolean
-  d_signature	:: CSize,
-  d_kerning	:: CDouble,
-  d_interword_spacing:: CDouble,
-  d_interline_spacind :: CDouble,
-  d_direction	:: CUInt--enum
+  d_element_reference ::  ElementReference,
+  d_signature	:: CULong
 }
