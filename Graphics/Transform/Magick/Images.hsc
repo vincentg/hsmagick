@@ -22,6 +22,9 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               sampleImage,
               thumbnailImage,
               resizeImage,
+              --drawing
+              --getDrawInfo,--temporary, for testing
+              --destroyDrawInfo,
               -- enhancements
               contrastImage,
               equalizeImage,
@@ -89,6 +92,10 @@ shaveImage              :: Rectangle -> HImage -> HImage
 scaleImage, sampleImage, thumbnailImage   :: Word -> Word -> HImage -> HImage
 magnifyImage, minifyImage                 :: HImage -> HImage
 resizeImage :: Int -> Int -> FilterTypes -> Double -> HImage -> HImage
+---------- Drawing
+-- drawText :: String -> (Int,Int)-> HImage -> HImage
+--getDrawInfo ::HImage -> IO (ForeignPtr DrawInfo)
+--destroyDrawInfo :: ForeignPtr DrawInfo -> IO ()
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage
 equalizeImage, normalizeImage :: HImage -> HImage
@@ -353,6 +360,8 @@ thumbnailImage xFactor yFactor hImage = doTransformIO_XY thumbnail_image
 
 shearImage xFactor yFactor hImage = doTransformIO_XY_real shear_image
                                      hImage xFactor yFactor
+
+-----drawing functions
 
 -- the stupid argument names are due to these names being already taken
 -- as record fields.

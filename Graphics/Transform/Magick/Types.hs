@@ -462,15 +462,13 @@ data CPoint = CPoint {
 
 data GradientInfo = GradientInfo {
 	g_type	:: CUInt, --enum
-	g_bounding_box	::CRectangle,
-	g_gradient_vector	::CSegmentInfo,
-	g_stops	::	Ptr StopInfo,
-	g_number_stops 	:: CSize,
-	g_spread	:: CUInt,--enum
-	g_debug	::CUInt,--enum/boolean
-	g_gradient_signature:: CSize,
-	g_center	:: CPoint,
-	g_radius	:: CDouble
+	g_color :: PixelPacketByte,
+	g_stop	:: CSegmentInfo,
+	g_length:: CULong,
+	g_spread :: CUInt,--enum
+	g_signature :: CULong,
+	g_previous :: Ptr GradientInfo,
+	g_next	:: Ptr GradientInfo
 }
 
 data ElementReference = ElementReference {
@@ -481,7 +479,12 @@ data ElementReference = ElementReference {
   previous_element	:: Ptr ElementReference,
   next_element		:: Ptr ElementReference
 }
-
+{-as much as I'd love to, apparently these have to be manually initialized
+ - data DrawContextStruct = DrawContextStruct
+type DrawContext = Ptr DrawContextStruct
+data DrawInfoStruct = DrawInfoStruct
+type DrawInfo = Ptr DrawInfoStruct
+-}
 data DrawContext = DrawContext {
   c_image		:: Ptr Image,
   c_mvg			:: CString,
@@ -519,8 +522,8 @@ data DrawInfo = DrawInfo {
   d_stroke_width :: CDouble,
   d_gradient	:: GradientInfo,
   d_fill_pattern :: Ptr Image,
-  d_tile		:: Ptr Image,
-  d_stroke_pattern ::Ptr Image,
+  d_tile		:: Ptr HImage_,
+  d_stroke_pattern ::Ptr HImage_,
   d_stroke_antialias :: CUInt, --enum/boolean
   d_text_antialias  :: CUInt,  --enum/boolean
   d_fill_rule	:: CUInt,--enum
@@ -533,6 +536,7 @@ data DrawInfo = DrawInfo {
   d_text		:: CString,
   d_font		:: CString,
   d_family		:: CString,
+  d_style		:: CUInt, --enum
   d_stretch		:: CUInt,--enum
   d_weight	:: CULong,
   d_encoding	:: CString,
@@ -543,7 +547,7 @@ data DrawInfo = DrawInfo {
   d_border_color:: PixelPacketByte,
   d_server_name	:: CString,
   d_dash_pattern	:: Ptr Double,
-  d_clip_mask	:: CString,
+  d_clip_path	:: CString,
   d_bounds	:: CSegmentInfo,
   d_clip_units	:: CUInt, --eneum
   d_opacity	:: CUShort,
