@@ -27,6 +27,15 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               sample_image,
               thumbnail_image,
               resize_image,
+              --drawing 
+              get_draw_info,
+              destroy_draw_info,
+              force_destroy_draw_info,
+              draw_allocate_context,
+              draw_destroy_context,
+              draw_render,
+              draw_line,
+              draw_annotation,
               -- enhancements
               contrast_image,
               equalize_image,
@@ -223,6 +232,32 @@ foreign import ccall "static magick/api.h ThumbnailImage"
 foreign import ccall "static magick/api.h ResizeImage"
     resize_image :: Ptr HImage_ -> CULong -> CULong -> CUInt -> CDouble -> 
                       Ptr ExceptionInfo -> IO (Ptr HImage_)
+----------------drawing
+
+foreign import ccall "static magick/api.h GetDrawInfo"
+	get_draw_info :: (Ptr HImageInfo) -> (Ptr DrawInfo) -> IO (Ptr DrawInfo)
+
+foreign import ccall "static magick/api.h &DestroyDrawInfo" 
+	destroy_draw_info:: FunPtr (Ptr DrawInfo -> IO ())
+
+foreign import ccall "static magick/api.h DestroyDrawInfo"
+	force_destroy_draw_info :: (Ptr DrawInfo -> IO())
+
+foreign import ccall "static magick/api.h DrawAllocateContext"
+	draw_allocate_context :: Ptr DrawInfo -> Ptr HImage_ -> IO (Ptr DrawContext)
+
+foreign import ccall "static magick/api.h DrawDestroyContext"
+	draw_destroy_context :: Ptr DrawContext -> IO ()
+
+foreign import ccall "static magick/api.h DrawRender"
+	draw_render :: Ptr DrawContext -> IO (CInt)
+
+foreign import ccall "static magick/api.h DrawLine"
+	draw_line :: Ptr DrawContext -> CDouble -> CDouble -> CDouble-> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawAnnotation"
+	draw_annotation :: Ptr DrawContext -> CDouble -> CDouble -> CString -> IO ()
+
 ---------- Enhancements
 
 -- Note that these side-effect the image! Higher-level API

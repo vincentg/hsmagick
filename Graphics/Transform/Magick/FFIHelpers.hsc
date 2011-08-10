@@ -1,4 +1,10 @@
-{-# OPTIONS -fno-warn-orphans #-}
+{-# 
+	LANGUAGE
+	FlexibleInstances,
+	MultiParamTypeClasses,
+	FunctionalDependencies,
+	UndecidableInstances,
+	OPTIONS -fno-warn-orphans #-}
 module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   withExceptions_,
                   setField,
@@ -16,6 +22,7 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   doTransformIO,
                   doTransformIO_XY,
                   doTransformIO_XY_real,
+                  doDrawOp,
                   sideEffectingOp,
                   linkImagesTogether,
                   mkNewExceptionInfo,
@@ -30,6 +37,7 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   hImageRows,
                   hImageColumns,
                   maybeToPtr,
+                  withDrawContext,
                   mkNewUnloadedImage) where
 
 #include <magick/api.h>
@@ -881,17 +889,58 @@ destroyDrawInfo :: Ptr DrawInfo -> IO ()
 destroyDrawInfo dinfo = do
 	force_destroy_draw_info dinfo
 
-doDrawOperation :: (HImage -> (Ptr DrawContext -> IO ()) -> HImage)
-doDrawOperation hImg op = unsafePerformIO $ do
+newtype DrawOp = DrawOp (Ptr DrawContext -> IO ())
+
+withDrawContext :: HImage -> (Ptr DrawContext -> IO (Ptr DrawContext)) -> HImage
+withDrawContext hImg op = unsafePerformIO $ do
 	newImg <- cloneImage hImg --draws are destructive, have to hide it
-	withForeignPtr (getImage hImg) (\ i_ptr -> 
+	withForeignPtr (getImage newImg) (\ i_ptr -> 
+		do
+			context <- draw_allocate_context nullPtr i_ptr
+			_ <- op context --for composibility, op returns its context.  but we dont actually need it at the real runtime
+			success <- draw_render context
+			draw_destroy_context context)
+	return newImg
+	
+
+class DrawOperation intArgs extArgs where 
+	doDrawOp :: (Ptr DrawContext -> intArgs) -> extArgs
+
+instance DrawOperation (IO()) (Ptr DrawContext -> IO(Ptr DrawContext)) where
+	doDrawOp op = preserveDrawContext op
+
+preserveDrawContext :: (Ptr DrawContext -> IO ()) -> Ptr DrawContext -> IO (Ptr DrawContext)
+preserveDrawContext op ctx = do
+	op ctx
+	return ctx
+
+instance DrawOperation intArgs extArgs => DrawOperation (a->intArgs) (a->extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx a)
+
+--class DrawOperation opFunction opArguments  where
+--	doDrawOp :: (Ptr DrawContext -> opFunction) -> opArguments
+
+--instance DrawOperation (IO()) (HImage -> HImage) where
+--	doDrawOp = doDrawOperation
+
+--instance DrawOperation opFunc opArgs => DrawOperation (a->opFunc) (a->opArgs) where
+--	doDrawOp op a = doDrawOp (\cont -> op cont a)
+
+
+--drawOp2 :: (Ptr DrawContext -> a -> b-> IO ())-> HImage -> a -> b -> HImage
+--drawOp2 op img x1 x2 = doDrawOperation img (\img_context -> op img_context x1 x2)
+
+
+doDrawOperation :: ((Ptr DrawContext -> IO ()) -> HImage -> HImage)
+doDrawOperation op hImg= unsafePerformIO $ do
+	newImg <- cloneImage hImg --draws are destructive, have to hide it
+	withForeignPtr (getImage newImg) (\ i_ptr -> 
 		do
 			context <- draw_allocate_context nullPtr i_ptr
 			op context
 			success <- draw_render context
 			draw_destroy_context context)
 	return newImg
-		
 
 
 

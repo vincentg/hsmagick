@@ -25,6 +25,9 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               --drawing
               --getDrawInfo,--temporary, for testing
               --destroyDrawInfo,
+              withDrawContext,
+              drawLine,
+              drawText,
               -- enhancements
               contrastImage,
               equalizeImage,
@@ -96,6 +99,11 @@ resizeImage :: Int -> Int -> FilterTypes -> Double -> HImage -> HImage
 -- drawText :: String -> (Int,Int)-> HImage -> HImage
 --getDrawInfo ::HImage -> IO (ForeignPtr DrawInfo)
 --destroyDrawInfo :: ForeignPtr DrawInfo -> IO ()
+drawLine :: CDouble -> CDouble -> CDouble -> CDouble -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawLine = doDrawOp draw_line
+
+drawText :: CDouble -> CDouble -> CString -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawText = doDrawOp draw_annotation
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage
 equalizeImage, normalizeImage :: HImage -> HImage
