@@ -96,14 +96,17 @@ scaleImage, sampleImage, thumbnailImage   :: Word -> Word -> HImage -> HImage
 magnifyImage, minifyImage                 :: HImage -> HImage
 resizeImage :: Int -> Int -> FilterTypes -> Double -> HImage -> HImage
 ---------- Drawing
--- drawText :: String -> (Int,Int)-> HImage -> HImage
---getDrawInfo ::HImage -> IO (ForeignPtr DrawInfo)
---destroyDrawInfo :: ForeignPtr DrawInfo -> IO ()
-drawLine :: CDouble -> CDouble -> CDouble -> CDouble -> Ptr DrawContext -> IO (Ptr DrawContext)
+--most functions are wrapped by doDrawOp, which takes a function starting with (Ptr DrawContext) and ending with IO (). It performs type conversion for numeric types, and formats it as expected by withDrawContext
+-- Functions with strings are messier.  It cant handle the strings by themselves, so we need to convert those manually here
+
+drawLine :: Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawLine = doDrawOp draw_line
 
-drawText :: CDouble -> CDouble -> CString -> Ptr DrawContext -> IO (Ptr DrawContext)
-drawText = doDrawOp draw_annotation
+drawText :: Double -> Double -> String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawText xp yp msg ctx = withCString msg (\ st -> (doDrawOp draw_annotation) xp yp st ctx)
+
+
+
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage
 equalizeImage, normalizeImage :: HImage -> HImage

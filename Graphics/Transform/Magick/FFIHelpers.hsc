@@ -1,6 +1,7 @@
 {-# 
 	LANGUAGE
 	FlexibleInstances,
+	FlexibleContexts,
 	MultiParamTypeClasses,
 	FunctionalDependencies,
 	UndecidableInstances,
@@ -897,25 +898,39 @@ withDrawContext hImg op = unsafePerformIO $ do
 	withForeignPtr (getImage newImg) (\ i_ptr -> 
 		do
 			context <- draw_allocate_context nullPtr i_ptr
-			_ <- op context --for composibility, op returns its context.  but we dont actually need it at the real runtime
+			_ <- op context --for composibility, op returns its context.  but we dont actually need it anymore at the real runtime
 			success <- draw_render context
 			draw_destroy_context context)
 	return newImg
-	
 
-class DrawOperation intArgs extArgs where 
-	doDrawOp :: (Ptr DrawContext -> intArgs) -> extArgs
+class DrawOperation interiorArgs extArgs where 
+	doDrawOp :: (Ptr DrawContext -> interiorArgs) -> extArgs  -- -> IO (Ptr DrawContext)
 
-instance DrawOperation (IO()) (Ptr DrawContext -> IO(Ptr DrawContext)) where
-	doDrawOp op = preserveDrawContext op
+instance DrawOperation (IO()) (Ptr DrawContext -> IO (Ptr DrawContext)) where
+	doDrawOp = preserveDrawContext 
 
 preserveDrawContext :: (Ptr DrawContext -> IO ()) -> Ptr DrawContext -> IO (Ptr DrawContext)
 preserveDrawContext op ctx = do
 	op ctx
 	return ctx
 
-instance DrawOperation intArgs extArgs => DrawOperation (a->intArgs) (a->extArgs) where
+
+--instance (DrawOperation intArgs extArgs) => DrawOperation (Ptr CChar -> intArgs) (String -> extArgs) where
+--	doDrawOp op a 
+
+applyArgToFunc :: (Real b, Fractional a) => (Ptr DrawContext -> a->whatever->IO ()) -> b -> Ptr DrawContext -> whatever -> IO ()
+applyArgToFunc op x ctx = op ctx (realToFrac x)
+
+
+--instance (DrawOperation intArgs extArgs) => DrawOperation (CString -> intArgs) (String->extArgs) where
+--	doDrawOp op a = doDrawOp (\ ctx -> op ctx a)
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (CString->intArgs) (CString->extArgs) where
 	doDrawOp op a = doDrawOp (\ctx -> op ctx a)
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (CDouble->intArgs) (Double->extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (realToFrac a))
+
 
 --class DrawOperation opFunction opArguments  where
 --	doDrawOp :: (Ptr DrawContext -> opFunction) -> opArguments
