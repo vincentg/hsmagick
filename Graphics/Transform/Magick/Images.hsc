@@ -28,6 +28,9 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               withDrawContext,
               drawLine,
               drawText,
+              drawCircle,
+              drawArc, 
+              drawBezier,
               -- enhancements
               contrastImage,
               equalizeImage,
@@ -101,6 +104,19 @@ resizeImage :: Int -> Int -> FilterTypes -> Double -> HImage -> HImage
 
 drawLine :: Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawLine = doDrawOp draw_line
+
+drawArc :: Double -> Double -> Double -> Double -> Double -> Double  -> Ptr DrawContext ->  IO (Ptr DrawContext)
+drawArc = doDrawOp draw_arc
+
+drawBezier :: [(Double,Double)] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawBezier coords ctx = do
+	cCoords <- getCoordPtr coords
+	withForeignPtr cCoords (\ coordPtr -> 
+		(doDrawOp draw_bezier) (length coords) coordPtr ctx)
+
+
+drawCircle :: Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawCircle = doDrawOp draw_circle
 
 drawText :: Double -> Double -> String -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawText xp yp msg ctx = withCString msg (\ st -> (doDrawOp draw_annotation) xp yp st ctx)

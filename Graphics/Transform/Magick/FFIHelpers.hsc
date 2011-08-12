@@ -39,6 +39,7 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   hImageColumns,
                   maybeToPtr,
                   withDrawContext,
+                  getCoordPtr,
                   mkNewUnloadedImage) where
 
 #include <magick/api.h>
@@ -881,6 +882,13 @@ maybeToPtr (Just stuff) p = poke p stuff >> return p
 
 ---drawing utility functions
 
+getCoordPtr :: [(Double,Double)] -> IO (ForeignPtr PointInfo)
+getCoordPtr hsCoords = do
+	let pointInfo = map (\ (x,y)-> PointInfo x y) hsCoords
+	memPtr <- mallocArray (length hsCoords)
+	pokeArray memPtr pointInfo
+	newForeignPtr finalizerFree memPtr
+
 getDrawInfo ::HImage -> IO (Ptr DrawInfo)
 getDrawInfo img = do
 	rawinfo <- malloc
@@ -915,18 +923,18 @@ preserveDrawContext op ctx = do
 	return ctx
 
 
---instance (DrawOperation intArgs extArgs) => DrawOperation (Ptr CChar -> intArgs) (String -> extArgs) where
---	doDrawOp op a 
-
 applyArgToFunc :: (Real b, Fractional a) => (Ptr DrawContext -> a->whatever->IO ()) -> b -> Ptr DrawContext -> whatever -> IO ()
 applyArgToFunc op x ctx = op ctx (realToFrac x)
 
 
---instance (DrawOperation intArgs extArgs) => DrawOperation (CString -> intArgs) (String->extArgs) where
---	doDrawOp op a = doDrawOp (\ ctx -> op ctx a)
-
-instance (DrawOperation intArgs extArgs) => DrawOperation (CString->intArgs) (CString->extArgs) where
+instance (DrawOperation intArgs extArgs) => DrawOperation (Ptr a->intArgs) (Ptr a->extArgs) where
 	doDrawOp op a = doDrawOp (\ctx -> op ctx a)
+
+instance (DrawOperation intArgs extArgs) =>  DrawOperation (CInt -> intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (CULong -> intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
 
 instance (DrawOperation intArgs extArgs) => DrawOperation (CDouble->intArgs) (Double->extArgs) where
 	doDrawOp op a = doDrawOp (\ctx -> op ctx (realToFrac a))
@@ -1078,6 +1086,19 @@ instance Storable DrawContext where
 		#{poke DrawContext, signature} ptr signature
 		
 -}
+
+instance Storable PointInfo where
+	alignment _ = #{alignment PointInfo}
+	sizeOf _ = #{size PointInfo}
+	peek ptr = do
+		px <- #{peek PointInfo, x} ptr
+		py <- #{peek PointInfo, y} ptr
+		return $ PointInfo px py
+	poke ptr (PointInfo px py) = do
+		#{poke PointInfo, x} ptr px
+		#{poke PointInfo, y} ptr py
+
+
 --long, but I dont -know any shorter way of doing this
 
 instance Storable DrawInfo where

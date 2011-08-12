@@ -503,6 +503,8 @@ data DrawContext = DrawContext {
   c_signature	:: CULong
 }
 
+data PointInfo = PointInfo{pt_x :: Double, pt_y :: Double}
+
 data CAffineMatrix = CAffineMatrix { c_sx::CDouble,
                                    c_rx::CDouble,
                                    c_ry::CDouble,

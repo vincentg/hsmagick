@@ -36,6 +36,9 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_render,
               draw_line,
               draw_annotation,
+              draw_arc,
+              draw_bezier,
+              draw_circle,
               -- enhancements
               contrast_image,
               equalize_image,
@@ -257,6 +260,16 @@ foreign import ccall "static magick/api.h DrawLine"
 
 foreign import ccall "static magick/api.h DrawAnnotation"
 	draw_annotation :: Ptr DrawContext -> CDouble -> CDouble -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawArc"
+	draw_arc :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawBezier"
+	draw_bezier :: Ptr DrawContext -> CULong -> Ptr PointInfo -> IO ()
+
+foreign import ccall "static magick/api.h DrawCircle"
+	draw_circle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
 
 ---------- Enhancements
 
