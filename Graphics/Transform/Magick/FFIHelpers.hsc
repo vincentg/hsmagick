@@ -914,12 +914,12 @@ withDrawContext hImg op = unsafePerformIO $ do
 class DrawOperation interiorArgs extArgs where 
 	doDrawOp :: (Ptr DrawContext -> interiorArgs) -> extArgs  -- -> IO (Ptr DrawContext)
 
-instance DrawOperation (IO()) (Ptr DrawContext -> IO (Ptr DrawContext)) where
+instance DrawOperation (IO a) (Ptr DrawContext -> IO (Ptr DrawContext)) where
 	doDrawOp = preserveDrawContext 
 
-preserveDrawContext :: (Ptr DrawContext -> IO ()) -> Ptr DrawContext -> IO (Ptr DrawContext)
+preserveDrawContext :: (Ptr DrawContext -> IO a) -> Ptr DrawContext -> IO (Ptr DrawContext)
 preserveDrawContext op ctx = do
-	op ctx
+	_ <- op ctx
 	return ctx
 
 
@@ -939,6 +939,11 @@ instance (DrawOperation intArgs extArgs) => DrawOperation (CULong -> intArgs) (I
 instance (DrawOperation intArgs extArgs) => DrawOperation (CDouble->intArgs) (Double->extArgs) where
 	doDrawOp op a = doDrawOp (\ctx -> op ctx (realToFrac a))
 
+instance (DrawOperation intArgs extArgs) => DrawOperation (Word8->intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (CUShort->intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
 
 --class DrawOperation opFunction opArguments  where
 --	doDrawOp :: (Ptr DrawContext -> opFunction) -> opArguments

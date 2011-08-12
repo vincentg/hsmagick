@@ -39,6 +39,15 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_arc,
               draw_bezier,
               draw_circle,
+              draw_set_font_family,
+              draw_set_fill_opacity,
+              draw_set_text_decoration,
+              draw_set_font_size,
+              draw_set_stroke_color,
+              draw_set_fill_color,
+              draw_set_fill_rule,
+              draw_set_fill_color_string,
+--              draw_set_stop_color,
               -- enhancements
               contrast_image,
               equalize_image,
@@ -258,8 +267,35 @@ foreign import ccall "static magick/api.h DrawRender"
 foreign import ccall "static magick/api.h DrawLine"
 	draw_line :: Ptr DrawContext -> CDouble -> CDouble -> CDouble-> CDouble -> IO ()
 
+foreign import ccall "static magick/api.h DrawSetFontFamily"
+	draw_set_font_family :: Ptr DrawContext -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFillOpacity"
+	draw_set_fill_opacity :: Ptr DrawContext -> CDouble -> IO()
+
+foreign import ccall "static magick/api.h DrawSetStrokeColor"
+	draw_set_stroke_color :: Ptr DrawContext -> Ptr PixelPacketByte-> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFillColor"
+	draw_set_fill_color :: Ptr DrawContext -> Ptr PixelPacketByte -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFillRule"
+	draw_set_fill_rule :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFillColorString"
+	draw_set_fill_color_string :: Ptr DrawContext -> CString -> IO ()
+
+--foreign import ccall "static magick/api.h DrawSetStopColor"
+--	draw_set_stop_color :: Ptr DrawContext -> Ptr PixelPacketByte -> IO ()
+
 foreign import ccall "static magick/api.h DrawAnnotation"
 	draw_annotation :: Ptr DrawContext -> CDouble -> CDouble -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetTextDecoration"
+	draw_set_text_decoration :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontSize"
+	draw_set_font_size :: Ptr DrawContext -> CDouble -> IO ()
 
 foreign import ccall "static magick/api.h DrawArc"
 	draw_arc :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()

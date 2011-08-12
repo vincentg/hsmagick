@@ -31,6 +31,15 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawCircle,
               drawArc, 
               drawBezier,
+              drawSetFontFamily,
+              drawSetTextDecoration,
+              drawSetFillOpacity,
+              drawSetFontSize,
+              drawSetStrokeColor,
+              drawSetFillColor,
+              drawSetFillRule,
+              drawSetFillColorString,
+--              drawSetStopColor,
               -- enhancements
               contrastImage,
               equalizeImage,
@@ -70,6 +79,8 @@ import Graphics.Transform.Magick.FFIHelpers
 import Graphics.Transform.Magick.Errors
 import Graphics.Transform.Magick.Util
 
+import Control.Monad
+
 import Data.Char
 import Data.List
 import System.Directory
@@ -100,7 +111,18 @@ magnifyImage, minifyImage                 :: HImage -> HImage
 resizeImage :: Int -> Int -> FilterTypes -> Double -> HImage -> HImage
 ---------- Drawing
 --most functions are wrapped by doDrawOp, which takes a function starting with (Ptr DrawContext) and ending with IO (). It performs type conversion for numeric types, and formats it as expected by withDrawContext
--- Functions with strings are messier.  It cant handle the strings by themselves, so we need to convert those manually here
+-- Functions with strings or other pointers are messier.  It cant handle the strings by themselves, so we need to convert those manually here
+
+
+finalizeDraw :: Ptr DrawContext -> IO (Ptr DrawContext)
+finalizeDraw = doDrawOp draw_render
+
+--doesnt seem to work
+drawSetFontFamily :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontFamily fam ctx = withCString fam (\ st -> (doDrawOp draw_set_font_family) st ctx)
+
+drawSetFillOpacity :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillOpacity = doDrawOp draw_set_fill_opacity
 
 drawLine :: Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawLine = doDrawOp draw_line
@@ -121,7 +143,41 @@ drawCircle = doDrawOp draw_circle
 drawText :: Double -> Double -> String -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawText xp yp msg ctx = withCString msg (\ st -> (doDrawOp draw_annotation) xp yp st ctx)
 
+setDrawColor :: (Ptr DrawContext -> Ptr PixelPacketByte -> IO ()) -> Int -> Int -> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+setDrawColor colorFun r g b o ctx = do
+	pixelPtr <- mallocForeignPtr :: IO (ForeignPtr PixelPacketByte)
+	_ <- (withForeignPtr pixelPtr fillAndCall) :: IO (Ptr DrawContext)
+	_ <- draw_render ctx
+	return ctx
+	where
+		fillAndCall pixPtr = do
+			poke pixPtr ((PixelPacket (fromIntegral r) (fromIntegral g) (fromIntegral b) (fromIntegral o)) :: PixelPacket Word8)
+			(doDrawOp colorFun) pixPtr ctx
 
+
+drawSetStrokeColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeColor = setDrawColor draw_set_stroke_color
+
+drawSetFillColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillColor= setDrawColor draw_set_fill_color 
+
+drawSetFillRule :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillRule = doDrawOp draw_set_fill_rule
+
+drawSetFillColorString :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillColorString clr ctx = withCString clr (\ clstr -> (doDrawOp draw_set_fill_color_string) clstr ctx)
+
+--despite being in the source and doc, this function apparently doesnt exist
+-- to quote draw.c: This is gradient stuff so it shouldnt be supported yet
+-- drawSetStopColor :: Int -> Int -> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+-- drawSetStopColor = setDrawColor draw_set_stop_color
+
+--todo.  make real data type to enforce enum
+drawSetTextDecoration :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextDecoration = doDrawOp draw_set_text_decoration
+
+drawSetFontSize :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontSize a= (doDrawOp draw_set_font_size) a>=> finalizeDraw
 
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage
