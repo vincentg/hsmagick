@@ -429,6 +429,8 @@ data CSegmentInfo = CSegmentInfo {
 	cy2	:: CDouble
 }
 
+data PaintMethod = PointMethod | ReplaceMethod | FloodfillMethod | FillToBorderMethod | ResetMethod deriving Enum
+
 data CRectangle = CRectangle {
 	rect_width	:: CUInt,
 	rect_height	:: CUInt,

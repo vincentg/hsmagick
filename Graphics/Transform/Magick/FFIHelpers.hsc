@@ -4,7 +4,6 @@
 	FlexibleContexts,
 	MultiParamTypeClasses,
 	FunctionalDependencies,
-	UndecidableInstances,
 	OPTIONS -fno-warn-orphans #-}
 module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   withExceptions_,

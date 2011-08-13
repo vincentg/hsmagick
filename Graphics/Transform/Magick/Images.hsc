@@ -29,9 +29,11 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawLine,
               drawText,
               drawCircle,
+              drawColor,
               drawArc, 
               drawBezier,
               drawSetFontFamily,
+              drawSetFont,
               drawSetTextDecoration,
               drawSetFillOpacity,
               drawSetFontSize,
@@ -39,6 +41,7 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetFillColor,
               drawSetFillRule,
               drawSetFillColorString,
+              PaintMethod(PointMethod,ReplaceMethod,FloodfillMethod,FillToBorderMethod,ResetMethod),
 --              drawSetStopColor,
               -- enhancements
               contrastImage,
@@ -121,6 +124,9 @@ finalizeDraw = doDrawOp draw_render
 drawSetFontFamily :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFontFamily fam ctx = withCString fam (\ st -> (doDrawOp draw_set_font_family) st ctx)
 
+drawSetFont :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFont fnt ctx = withCString fnt (\ st -> (doDrawOp draw_set_font) st ctx)
+
 drawSetFillOpacity :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFillOpacity = doDrawOp draw_set_fill_opacity
 
@@ -129,6 +135,9 @@ drawLine = doDrawOp draw_line
 
 drawArc :: Double -> Double -> Double -> Double -> Double -> Double  -> Ptr DrawContext ->  IO (Ptr DrawContext)
 drawArc = doDrawOp draw_arc
+
+drawColor :: Double -> Double -> PaintMethod -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawColor x y meth ctx = (doDrawOp draw_color)  x y (fromEnum meth) ctx
 
 drawBezier :: [(Double,Double)] -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawBezier coords ctx = do

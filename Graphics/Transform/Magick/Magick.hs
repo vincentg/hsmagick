@@ -38,8 +38,10 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_annotation,
               draw_arc,
               draw_bezier,
+              draw_color,
               draw_circle,
               draw_set_font_family,
+              draw_set_font,
               draw_set_fill_opacity,
               draw_set_text_decoration,
               draw_set_font_size,
@@ -267,8 +269,14 @@ foreign import ccall "static magick/api.h DrawRender"
 foreign import ccall "static magick/api.h DrawLine"
 	draw_line :: Ptr DrawContext -> CDouble -> CDouble -> CDouble-> CDouble -> IO ()
 
+foreign import ccall "static magick/api.h DrawColor"
+	draw_color :: Ptr DrawContext -> CDouble -> CDouble -> CInt -> IO ()
+
 foreign import ccall "static magick/api.h DrawSetFontFamily"
 	draw_set_font_family :: Ptr DrawContext -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFont"
+	draw_set_font :: Ptr DrawContext -> CString -> IO ()
 
 foreign import ccall "static magick/api.h DrawSetFillOpacity"
 	draw_set_fill_opacity :: Ptr DrawContext -> CDouble -> IO()
