@@ -38,11 +38,18 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetTextDecoration,
               drawSetFillOpacity,
               drawSetFontSize,
+              drawSetFontStretch,
+              drawSetFontStyle,
+              drawSetFontWeight,
+              drawSetGravity,
               drawSetStrokeColor,
               drawSetFillColor,
               drawSetFillRule,
               drawSetFillColorString,
               PaintMethod(PointMethod,ReplaceMethod,FloodfillMethod,FillToBorderMethod,ResetMethod),
+              FontStyleType(NormalStyle, ItalicStyle, ObliqueStyle, AnyStyle),
+              FontStretchType(NormalStretch, UltraCondensedStretch, ExtraCondensedStretch, CondensedStretch,SemiCondensedStretch, SemiExpandedStretch, ExpandedStretch, ExtraExpandedStretch, UltraExpandedStretch, AnyStretch),
+              DrawGravityType(ForgetGravity, NorthWestGravity, NorthGravity, NorthEastGravity, WestGravity, CenterGravity, EastGravity, SouthWestGravity, SouthGravity, SouthEastGravity),
               draw_get_clip_path,
 --              drawSetStopColor,
               -- enhancements
@@ -189,6 +196,22 @@ drawSetTextDecoration = doDrawOp draw_set_text_decoration
 
 drawSetFontSize :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFontSize a= (doDrawOp draw_set_font_size) a>=> finalizeDraw
+
+drawSetFontStretch :: FontStretchType -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontStretch st ctx = (doDrawOp draw_set_font_stretch) (fromEnum st) ctx
+
+drawSetFontStyle :: FontStyleType -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontStyle st ctx  = (doDrawOp draw_set_font_style) (fromEnum st) ctx
+
+--graphicsmagick docs say this must be between 100 and 900.  at the moment, it will just bump anything lower or higher to the min/max
+drawSetFontWeight :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontWeight wght ctx 
+	| wght < 100 = (doDrawOp draw_set_font_weight) (100::Int) ctx
+	| wght > 900 = (doDrawOp draw_set_font_weight) (900::Int) ctx
+	| otherwise = (doDrawOp draw_set_font_weight) wght ctx
+
+drawSetGravity :: DrawGravityType -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetGravity gvt ctx= (doDrawOp draw_set_gravity) (fromEnum gvt) ctx
 
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage

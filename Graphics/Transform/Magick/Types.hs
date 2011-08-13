@@ -431,6 +431,13 @@ data CSegmentInfo = CSegmentInfo {
 
 data PaintMethod = PointMethod | ReplaceMethod | FloodfillMethod | FillToBorderMethod | ResetMethod deriving Enum
 
+data FontStretchType = NormalStretch | UltraCondensedStretch | ExtraCondensedStretch | CondensedStretch | SemiCondensedStretch | SemiExpandedStretch | ExpandedStretch | ExtraExpandedStretch | UltraExpandedStretch | AnyStretch deriving Enum
+
+data FontStyleType = NormalStyle | ItalicStyle | ObliqueStyle | AnyStyle deriving Enum
+
+data DrawGravityType = ForgetGravity | NorthWestGravity | NorthGravity | NorthEastGravity | WestGravity | CenterGravity | EastGravity | SouthWestGravity | SouthGravity | SouthEastGravity deriving Enum
+
+
 data CRectangle = CRectangle {
 	rect_width	:: CUInt,
 	rect_height	:: CUInt,

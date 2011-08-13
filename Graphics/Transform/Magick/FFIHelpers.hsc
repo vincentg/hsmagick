@@ -951,18 +951,6 @@ instance (DrawOperation intArgs extArgs) => DrawOperation (Word8->intArgs) (Int 
 instance (DrawOperation intArgs extArgs) => DrawOperation (CUShort->intArgs) (Int -> extArgs) where
 	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
 
---class DrawOperation opFunction opArguments  where
---	doDrawOp :: (Ptr DrawContext -> opFunction) -> opArguments
-
---instance DrawOperation (IO()) (HImage -> HImage) where
---	doDrawOp = doDrawOperation
-
---instance DrawOperation opFunc opArgs => DrawOperation (a->opFunc) (a->opArgs) where
---	doDrawOp op a = doDrawOp (\cont -> op cont a)
-
-
---drawOp2 :: (Ptr DrawContext -> a -> b-> IO ())-> HImage -> a -> b -> HImage
---drawOp2 op img x1 x2 = doDrawOperation img (\img_context -> op img_context x1 x2)
 
 
 doDrawOperation :: ((Ptr DrawContext -> IO ()) -> HImage -> HImage)

@@ -46,6 +46,10 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_set_fill_opacity,
               draw_set_text_decoration,
               draw_set_font_size,
+              draw_set_font_stretch,
+              draw_set_font_style,
+              draw_set_font_weight,
+              draw_set_gravity,
               draw_set_stroke_color,
               draw_set_fill_color,
               draw_set_fill_rule,
@@ -311,6 +315,20 @@ foreign import ccall "static magick/api.h DrawSetTextDecoration"
 
 foreign import ccall "static magick/api.h DrawSetFontSize"
 	draw_set_font_size :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontStretch"
+	draw_set_font_stretch :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontStyle"
+	draw_set_font_style :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontWeight"
+	draw_set_font_weight :: Ptr DrawContext -> CULong -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetGravity"
+	draw_set_gravity :: Ptr DrawContext -> CInt -> IO ()
+
+
 
 foreign import ccall "static magick/api.h DrawArc"
 	draw_arc :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
