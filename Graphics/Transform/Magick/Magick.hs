@@ -33,6 +33,7 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               force_destroy_draw_info,
               draw_allocate_context,
               draw_destroy_context,
+              draw_destroy_context_ptr,
               draw_render,
               draw_line,
               draw_annotation,
@@ -48,6 +49,7 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_set_stroke_color,
               draw_set_fill_color,
               draw_set_fill_rule,
+              draw_get_clip_path,
               draw_set_fill_color_string,
 --              draw_set_stop_color,
               -- enhancements
@@ -260,6 +262,8 @@ foreign import ccall "static magick/api.h DestroyDrawInfo"
 foreign import ccall "static magick/api.h DrawAllocateContext"
 	draw_allocate_context :: Ptr DrawInfo -> Ptr HImage_ -> IO (Ptr DrawContext)
 
+foreign import ccall "static magick/api.h &DrawDestroyContext"
+	draw_destroy_context_ptr :: FunPtr (Ptr DrawContext -> IO ())
 foreign import ccall "static magick/api.h DrawDestroyContext"
 	draw_destroy_context :: Ptr DrawContext -> IO ()
 
@@ -277,6 +281,9 @@ foreign import ccall "static magick/api.h DrawSetFontFamily"
 
 foreign import ccall "static magick/api.h DrawSetFont"
 	draw_set_font :: Ptr DrawContext -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawGetClipPath"
+	draw_get_clip_path :: Ptr DrawContext -> IO CString
 
 foreign import ccall "static magick/api.h DrawSetFillOpacity"
 	draw_set_fill_opacity :: Ptr DrawContext -> CDouble -> IO()

@@ -38,6 +38,7 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   hImageColumns,
                   maybeToPtr,
                   withDrawContext,
+                  provideDrawContext,
                   getCoordPtr,
                   mkNewUnloadedImage) where
 
@@ -898,6 +899,12 @@ destroyDrawInfo dinfo = do
 	force_destroy_draw_info dinfo
 
 newtype DrawOp = DrawOp (Ptr DrawContext -> IO ())
+
+provideDrawContext :: HImage -> IO (ForeignPtr DrawContext)
+provideDrawContext hImg = do
+	newImg <- cloneImage hImg
+	rawCtx <- withForeignPtr (getImage newImg) (\i_ptr -> draw_allocate_context nullPtr i_ptr)
+	newForeignPtr draw_destroy_context_ptr rawCtx
 
 withDrawContext :: HImage -> (Ptr DrawContext -> IO (Ptr DrawContext)) -> HImage
 withDrawContext hImg op = unsafePerformIO $ do
