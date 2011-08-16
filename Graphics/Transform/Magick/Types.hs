@@ -439,6 +439,10 @@ data DrawGravityType = ForgetGravity | NorthWestGravity | NorthGravity | NorthEa
 
 data CompositeOperator = UndefinedCompositeOp | OverCompositeOp | InCompositeOp | OutCompositeOp | AutoCompositeOp | AtopCompositeOp | XorCompositeOp | PlusCompositeOp | MinusCompositeOp | AddCompositeOp | SubtractCompositeOp | DifferenceCompositeOp | BumpmapCompositeOp | CopyCompositeOp | CopyRedCompositeOp | CopyGreenCompositeOp | CopyBlueCompositeOp | CopyOpacityCompositeOp | ClearCompositeOp | DissolveCompositeOp | DisplaceCompositeOp | ModulateCompositeOp | ThresholdCompositeOp | NoCompositeOp | DarkenCompositeOp | LightenCompositeOp | HueCompositeOp | SaturateCompositeOp | ColorizeCompositeOp | LuminizeCompositeOp | ScreenCompositeOp | OverlayCompositeOp | CopyCyanCompositeOp | CopyMagentaCompositeOp | CopyBlackCompositeOp | DivideCompositeOp deriving Enum
 
+data LineCap = UndefinedCap | ButtCap | RoundCap | SquareCap deriving Enum
+
+data LineJoin = UndefintedJoin | MiterJoin  | RoundJoin | BevelJoin deriving Enum
+
 
 data CRectangle = CRectangle {
 	rect_width	:: CUInt,

@@ -54,6 +54,10 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetStrokeMiterLimit,
               drawSetStrokeOpacity,
               drawSetStrokeWidth,
+              drawSetStrokeLineCap,
+              drawSetStrokeLineJoin,
+              drawSetStrokeDashArray,
+              drawSetStrokeDashOffset,
               drawSetFillColor,
               drawSetFillRule,
               drawSetFillColorString,
@@ -68,6 +72,8 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               FontStyleType(NormalStyle, ItalicStyle, ObliqueStyle, AnyStyle),
               FontStretchType(NormalStretch, UltraCondensedStretch, ExtraCondensedStretch, CondensedStretch,SemiCondensedStretch, SemiExpandedStretch, ExpandedStretch, ExtraExpandedStretch, UltraExpandedStretch, AnyStretch),
               DrawGravityType(ForgetGravity, NorthWestGravity, NorthGravity, NorthEastGravity, WestGravity, CenterGravity, EastGravity, SouthWestGravity, SouthGravity, SouthEastGravity),
+              LineJoin(..),
+              LineCap(..),
               draw_get_clip_path,
 --              drawSetStopColor,
               -- enhancements
@@ -223,6 +229,22 @@ drawSetStrokeOpacity = doDrawOp draw_set_stroke_opacity
 
 drawSetStrokeWidth :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetStrokeWidth = doDrawOp draw_set_stroke_width
+
+drawSetStrokeLineCap :: LineCap -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeLineCap lc = (doDrawOp draw_set_stroke_line_cap) (fromEnum lc)
+
+drawSetStrokeLineJoin :: LineJoin -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeLineJoin lj = (doDrawOp draw_set_stroke_line_join) (fromEnum lj)
+
+drawSetStrokeDashArray :: [Double] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeDashArray darray ctx = do
+	let cdubs = map realToFrac darray ::[CDouble]
+	dptr <- mallocArray (length darray)
+	pokeArray dptr cdubs
+	(doDrawOp  draw_set_stroke_dash_array) (length darray) dptr ctx
+
+drawSetStrokeDashOffset :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeDashOffset = doDrawOp draw_set_stroke_dash_offset
 
 drawSetFillColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFillColor= setDrawColor draw_set_fill_color 

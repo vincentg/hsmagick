@@ -62,6 +62,10 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_set_stroke_miter_limit,
               draw_set_stroke_opacity,
               draw_set_stroke_width,
+              draw_set_stroke_line_cap,
+              draw_set_stroke_line_join,
+              draw_set_stroke_dash_array,
+              draw_set_stroke_dash_offset,
               draw_set_fill_color,
               draw_set_fill_rule,
               draw_get_clip_path,
@@ -391,6 +395,18 @@ foreign import ccall "static magick/api.h DrawSetStrokeOpacity"
 
 foreign import ccall "static magick/api.h DrawSetStrokeWidth"
 	draw_set_stroke_width :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeLineCap"
+	draw_set_stroke_line_cap :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeLineJoin"
+	draw_set_stroke_line_join :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeDashArray"
+	draw_set_stroke_dash_array :: Ptr DrawContext -> CULong -> Ptr CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeDashOffset"
+	draw_set_stroke_dash_offset :: Ptr DrawContext -> CDouble -> IO ()
 
 foreign import ccall "static magick/api.h DrawTranslate"
 	draw_translate :: Ptr DrawContext -> CDouble -> CDouble -> IO ()
