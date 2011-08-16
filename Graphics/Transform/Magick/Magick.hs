@@ -66,6 +66,7 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_set_stroke_line_join,
               draw_set_stroke_dash_array,
               draw_set_stroke_dash_offset,
+              draw_set_stroke_antialias,
               draw_set_fill_color,
               draw_set_fill_rule,
               draw_get_clip_path,
@@ -407,6 +408,9 @@ foreign import ccall "static magick/api.h DrawSetStrokeDashArray"
 
 foreign import ccall "static magick/api.h DrawSetStrokeDashOffset"
 	draw_set_stroke_dash_offset :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeAntialias"
+	draw_set_stroke_antialias :: Ptr DrawContext-> CUInt -> IO ()
 
 foreign import ccall "static magick/api.h DrawTranslate"
 	draw_translate :: Ptr DrawContext -> CDouble -> CDouble -> IO ()

@@ -244,6 +244,9 @@ drawSetStrokeDashArray darray ctx = do
 drawSetStrokeDashOffset :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetStrokeDashOffset = doDrawOp draw_set_stroke_dash_offset
 
+drawSetStrokeAntialias :: Bool -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeAntialias = doDrawOp draw_set_stroke_antialias
+
 drawSetFillColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFillColor= setDrawColor draw_set_fill_color 
 
