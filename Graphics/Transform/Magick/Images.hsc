@@ -44,6 +44,9 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetFontWeight,
               drawSetGravity,
               drawSetStrokeColor,
+              drawSetStrokeMiterLimit,
+              drawSetStrokeOpacity,
+              drawSetStrokeWidth,
               drawSetFillColor,
               drawSetFillRule,
               drawSetFillColorString,
@@ -181,6 +184,15 @@ setDrawColor colorFun r g b o ctx = do
 
 drawSetStrokeColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetStrokeColor = setDrawColor draw_set_stroke_color
+
+drawSetStrokeMiterLimit :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeMiterLimit = doDrawOp draw_set_stroke_miter_limit
+
+drawSetStrokeOpacity :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeOpacity = doDrawOp draw_set_stroke_opacity
+
+drawSetStrokeWidth :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeWidth = doDrawOp draw_set_stroke_width
 
 drawSetFillColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFillColor= setDrawColor draw_set_fill_color 

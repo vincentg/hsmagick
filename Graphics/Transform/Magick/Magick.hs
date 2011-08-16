@@ -52,6 +52,9 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_set_font_weight,
               draw_set_gravity,
               draw_set_stroke_color,
+              draw_set_stroke_miter_limit,
+              draw_set_stroke_opacity,
+              draw_set_stroke_width,
               draw_set_fill_color,
               draw_set_fill_rule,
               draw_get_clip_path,
@@ -347,6 +350,14 @@ foreign import ccall "static magick/api.h DrawComposite"
 foreign import ccall "static magick/api.h DrawEllipse"
 	draw_ellipse :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
 
+foreign import ccall "static magick/api.h DrawSetStrokeMiterLimit"
+	draw_set_stroke_miter_limit :: Ptr DrawContext -> CULong -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeOpacity"
+	draw_set_stroke_opacity :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeWidth"
+	draw_set_stroke_width :: Ptr DrawContext -> CDouble -> IO ()
 ---------- Enhancements
 
 -- Note that these side-effect the image! Higher-level API
