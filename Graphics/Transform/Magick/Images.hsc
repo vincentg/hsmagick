@@ -239,9 +239,7 @@ drawSetStrokeLineJoin lj = (doDrawOp draw_set_stroke_line_join) (fromEnum lj)
 drawSetStrokeDashArray :: [Double] -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetStrokeDashArray darray ctx = do
 	let cdubs = map realToFrac darray ::[CDouble]
-	dptr <- mallocArray (length darray)
-	pokeArray dptr cdubs
-	(doDrawOp  draw_set_stroke_dash_array) (length darray) dptr ctx
+	withArray cdubs (\ dptr -> (doDrawOp  draw_set_stroke_dash_array) (length darray) dptr ctx)
 
 drawSetStrokeDashOffset :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetStrokeDashOffset = doDrawOp draw_set_stroke_dash_offset
