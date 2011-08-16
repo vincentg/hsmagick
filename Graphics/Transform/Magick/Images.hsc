@@ -38,6 +38,8 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetFont,
               drawSetTextDecoration,
               drawSetTextAntialias,
+              drawSetTextUnderColor,
+              drawSetTextUnderColorString,
               drawSetFillOpacity,
               drawSetFontSize,
               drawSetFontStretch,
@@ -215,6 +217,12 @@ drawSetTextDecoration = doDrawOp draw_set_text_decoration
 
 drawSetTextAntialias :: Bool -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetTextAntialias = doDrawOp draw_set_text_antialias
+
+drawSetTextUnderColor :: Int -> Int -> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextUnderColor = setDrawColor draw_set_text_under_color
+
+drawSetTextUnderColorString :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextUnderColorString clr ctx = withCString clr (\cstr -> doDrawOp draw_set_text_under_color_string cstr ctx)
 
 drawSetFontSize :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFontSize a= (doDrawOp draw_set_font_size) a>=> finalizeDraw

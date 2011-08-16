@@ -47,6 +47,8 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_set_fill_opacity,
               draw_set_text_decoration,
               draw_set_text_antialias,
+              draw_set_text_under_color,
+              draw_set_text_under_color_string,
               draw_set_font_size,
               draw_set_font_stretch,
               draw_set_font_style,
@@ -321,6 +323,12 @@ foreign import ccall "static magick/api.h DrawSetTextDecoration"
 
 foreign import ccall "static magick/api.h DrawSetTextAntialias"
 	draw_set_text_antialias :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetTextUnderColor"
+	draw_set_text_under_color :: Ptr DrawContext -> Ptr PixelPacketByte -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetTextUnderColorString"
+	draw_set_text_under_color_string :: Ptr DrawContext -> CString -> IO ()
 
 foreign import ccall "static magick/api.h DrawSetFontSize"
 	draw_set_font_size :: Ptr DrawContext -> CDouble -> IO ()
