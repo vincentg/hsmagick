@@ -33,6 +33,7 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawRectangle,
               drawRoundRectangle,
               drawPolygon,
+              drawPolyline,
               drawEllipse,
               drawColor,
               drawArc, 
@@ -189,6 +190,12 @@ drawPolygon crds ctx= do
 	coords <- getCoordPtr crds
 	withForeignPtr coords (\cptr -> 
 		(doDrawOp draw_polygon)(length crds) cptr ctx)
+
+drawPolyline :: [(Double, Double)] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawPolyline crds ctx = do
+	coords <- getCoordPtr crds
+	withForeignPtr coords (\cptr -> 
+		(doDrawOp draw_polyline) (length crds) cptr ctx)
 
 drawText :: Double -> Double -> String -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawText xp yp msg ctx = withCString msg (\ st -> (doDrawOp draw_annotation) xp yp st ctx)
