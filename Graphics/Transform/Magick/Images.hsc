@@ -54,6 +54,11 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetFillRule,
               drawSetFillColorString,
               drawComposite,
+              drawTranslate,
+              drawRotate,
+              drawScale,
+              drawSkewX,
+              drawSkewY,
               CompositeOperator(UndefinedCompositeOp, OverCompositeOp, InCompositeOp, OutCompositeOp, AutoCompositeOp, AtopCompositeOp, XorCompositeOp, PlusCompositeOp, MinusCompositeOp, AddCompositeOp, SubtractCompositeOp, DifferenceCompositeOp, BumpmapCompositeOp, CopyCompositeOp, CopyRedCompositeOp, CopyGreenCompositeOp, CopyBlueCompositeOp, CopyOpacityCompositeOp, ClearCompositeOp, DissolveCompositeOp, DisplaceCompositeOp, ModulateCompositeOp, ThresholdCompositeOp, NoCompositeOp, DarkenCompositeOp, LightenCompositeOp, HueCompositeOp, SaturateCompositeOp, ColorizeCompositeOp, LuminizeCompositeOp, ScreenCompositeOp, OverlayCompositeOp, CopyCyanCompositeOp, CopyMagentaCompositeOp, CopyBlackCompositeOp, DivideCompositeOp),
               PaintMethod(PointMethod,ReplaceMethod,FloodfillMethod,FillToBorderMethod,ResetMethod),
               FontStyleType(NormalStyle, ItalicStyle, ObliqueStyle, AnyStyle),
@@ -247,6 +252,22 @@ drawComposite :: CompositeOperator -> Double -> Double -> Double -> Double -> HI
 drawComposite compOp x y width height hImg ctx= do
 	newImg <- cloneImage hImg
 	withForeignPtr (getImage newImg) (\ iPtr -> (doDrawOp draw_composite) (fromEnum compOp) x y width height iPtr ctx)
+
+
+drawTranslate :: Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawTranslate = doDrawOp draw_translate
+
+drawRotate :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawRotate = doDrawOp draw_rotate
+
+drawScale :: Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawScale = doDrawOp draw_scale
+
+drawSkewX :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSkewX = doDrawOp draw_skew_x
+
+drawSkewY :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSkewY = doDrawOp draw_skew_y
 
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage

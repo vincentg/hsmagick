@@ -63,6 +63,11 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_get_clip_path,
               draw_set_fill_color_string,
               draw_composite,
+              draw_translate,
+              draw_rotate,
+              draw_scale,
+              draw_skew_x,
+              draw_skew_y,
 --              draw_set_stop_color,
               -- enhancements
               contrast_image,
@@ -370,6 +375,21 @@ foreign import ccall "static magick/api.h DrawSetStrokeOpacity"
 
 foreign import ccall "static magick/api.h DrawSetStrokeWidth"
 	draw_set_stroke_width :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawTranslate"
+	draw_translate :: Ptr DrawContext -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawRotate"
+	draw_rotate :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawScale"
+	draw_scale :: Ptr DrawContext -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSkewX"
+	draw_skew_x :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSkewY"
+	draw_skew_y :: Ptr DrawContext -> CDouble -> IO ()
 ---------- Enhancements
 
 -- Note that these side-effect the image! Higher-level API
