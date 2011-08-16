@@ -37,6 +37,7 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetFontFamily,
               drawSetFont,
               drawSetTextDecoration,
+              drawSetTextAntialias,
               drawSetFillOpacity,
               drawSetFontSize,
               drawSetFontStretch,
@@ -211,6 +212,9 @@ drawSetFillColorString clr ctx = withCString clr (\ clstr -> (doDrawOp draw_set_
 --todo.  make real data type to enforce enum
 drawSetTextDecoration :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetTextDecoration = doDrawOp draw_set_text_decoration
+
+drawSetTextAntialias :: Bool -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextAntialias = doDrawOp draw_set_text_antialias
 
 drawSetFontSize :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetFontSize a= (doDrawOp draw_set_font_size) a>=> finalizeDraw
