@@ -41,6 +41,7 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_bezier,
               draw_color,
               draw_circle,
+              draw_ellipse,
               draw_set_font_family,
               draw_set_font,
               draw_set_fill_opacity,
@@ -55,6 +56,7 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_set_fill_rule,
               draw_get_clip_path,
               draw_set_fill_color_string,
+              draw_composite,
 --              draw_set_stop_color,
               -- enhancements
               contrast_image,
@@ -339,6 +341,11 @@ foreign import ccall "static magick/api.h DrawBezier"
 foreign import ccall "static magick/api.h DrawCircle"
 	draw_circle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
 
+foreign import ccall "static magick/api.h DrawComposite"
+	draw_composite :: Ptr DrawContext -> CInt -> CDouble -> CDouble -> CDouble -> CDouble -> Ptr HImage_ -> IO ()
+
+foreign import ccall "static magick/api.h DrawEllipse"
+	draw_ellipse :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
 
 ---------- Enhancements
 

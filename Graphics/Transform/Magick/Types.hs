@@ -437,6 +437,8 @@ data FontStyleType = NormalStyle | ItalicStyle | ObliqueStyle | AnyStyle derivin
 
 data DrawGravityType = ForgetGravity | NorthWestGravity | NorthGravity | NorthEastGravity | WestGravity | CenterGravity | EastGravity | SouthWestGravity | SouthGravity | SouthEastGravity deriving Enum
 
+data CompositeOperator = UndefinedCompositeOp | OverCompositeOp | InCompositeOp | OutCompositeOp | AutoCompositeOp | AtopCompositeOp | XorCompositeOp | PlusCompositeOp | MinusCompositeOp | AddCompositeOp | SubtractCompositeOp | DifferenceCompositeOp | BumpmapCompositeOp | CopyCompositeOp | CopyRedCompositeOp | CopyGreenCompositeOp | CopyBlueCompositeOp | CopyOpacityCompositeOp | ClearCompositeOp | DissolveCompositeOp | DisplaceCompositeOp | ModulateCompositeOp | ThresholdCompositeOp | NoCompositeOp | DarkenCompositeOp | LightenCompositeOp | HueCompositeOp | SaturateCompositeOp | ColorizeCompositeOp | LuminizeCompositeOp | ScreenCompositeOp | OverlayCompositeOp | CopyCyanCompositeOp | CopyMagentaCompositeOp | CopyBlackCompositeOp | DivideCompositeOp deriving Enum
+
 
 data CRectangle = CRectangle {
 	rect_width	:: CUInt,

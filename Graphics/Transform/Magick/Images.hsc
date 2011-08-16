@@ -30,6 +30,7 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawLine,
               drawText,
               drawCircle,
+              drawEllipse,
               drawColor,
               drawArc, 
               drawBezier,
@@ -46,6 +47,8 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawSetFillColor,
               drawSetFillRule,
               drawSetFillColorString,
+              drawComposite,
+              CompositeOperator(UndefinedCompositeOp, OverCompositeOp, InCompositeOp, OutCompositeOp, AutoCompositeOp, AtopCompositeOp, XorCompositeOp, PlusCompositeOp, MinusCompositeOp, AddCompositeOp, SubtractCompositeOp, DifferenceCompositeOp, BumpmapCompositeOp, CopyCompositeOp, CopyRedCompositeOp, CopyGreenCompositeOp, CopyBlueCompositeOp, CopyOpacityCompositeOp, ClearCompositeOp, DissolveCompositeOp, DisplaceCompositeOp, ModulateCompositeOp, ThresholdCompositeOp, NoCompositeOp, DarkenCompositeOp, LightenCompositeOp, HueCompositeOp, SaturateCompositeOp, ColorizeCompositeOp, LuminizeCompositeOp, ScreenCompositeOp, OverlayCompositeOp, CopyCyanCompositeOp, CopyMagentaCompositeOp, CopyBlackCompositeOp, DivideCompositeOp),
               PaintMethod(PointMethod,ReplaceMethod,FloodfillMethod,FillToBorderMethod,ResetMethod),
               FontStyleType(NormalStyle, ItalicStyle, ObliqueStyle, AnyStyle),
               FontStretchType(NormalStretch, UltraCondensedStretch, ExtraCondensedStretch, CondensedStretch,SemiCondensedStretch, SemiExpandedStretch, ExpandedStretch, ExtraExpandedStretch, UltraExpandedStretch, AnyStretch),
@@ -145,6 +148,9 @@ drawLine = doDrawOp draw_line
 drawArc :: Double -> Double -> Double -> Double -> Double -> Double  -> Ptr DrawContext ->  IO (Ptr DrawContext)
 drawArc = doDrawOp draw_arc
 
+drawEllipse :: Double -> Double -> Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawEllipse = doDrawOp draw_ellipse
+
 drawColor :: Double -> Double -> PaintMethod -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawColor x y meth ctx = (doDrawOp draw_color)  x y (fromEnum meth) ctx
 
@@ -212,6 +218,11 @@ drawSetFontWeight wght ctx
 
 drawSetGravity :: DrawGravityType -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawSetGravity gvt ctx= (doDrawOp draw_set_gravity) (fromEnum gvt) ctx
+
+drawComposite :: CompositeOperator -> Double -> Double -> Double -> Double -> HImage -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawComposite compOp x y width height hImg ctx= do
+	newImg <- cloneImage hImg
+	withForeignPtr (getImage newImg) (\ iPtr -> (doDrawOp draw_composite) (fromEnum compOp) x y width height iPtr ctx)
 
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage
