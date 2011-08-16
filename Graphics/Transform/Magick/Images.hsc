@@ -30,6 +30,9 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               drawLine,
               drawText,
               drawCircle,
+              drawRectangle,
+              drawRoundRectangle,
+              drawPolygon,
               drawEllipse,
               drawColor,
               drawArc, 
@@ -174,6 +177,18 @@ drawBezier coords ctx = do
 
 drawCircle :: Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawCircle = doDrawOp draw_circle
+
+drawRectangle :: Double -> Double -> Double ->Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawRectangle = doDrawOp draw_rectangle
+
+drawRoundRectangle :: Double -> Double -> Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawRoundRectangle = doDrawOp draw_round_rectangle
+
+drawPolygon :: [(Double,Double)] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawPolygon crds ctx= do
+	coords <- getCoordPtr crds
+	withForeignPtr coords (\cptr -> 
+		(doDrawOp draw_polygon)(length crds) cptr ctx)
 
 drawText :: Double -> Double -> String -> Ptr DrawContext -> IO (Ptr DrawContext)
 drawText xp yp msg ctx = withCString msg (\ st -> (doDrawOp draw_annotation) xp yp st ctx)

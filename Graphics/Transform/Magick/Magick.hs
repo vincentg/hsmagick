@@ -41,6 +41,9 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               draw_bezier,
               draw_color,
               draw_circle,
+              draw_rectangle,
+              draw_round_rectangle,
+              draw_polygon,
               draw_ellipse,
               draw_set_font_family,
               draw_set_font,
@@ -360,6 +363,15 @@ foreign import ccall "static magick/api.h DrawBezier"
 
 foreign import ccall "static magick/api.h DrawCircle"
 	draw_circle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magicl/api.h DrawRectangle"
+	draw_rectangle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magicl/api.h  DrawRoundRectangle"
+	draw_round_rectangle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magicl/api.h DrawPolygon"
+	draw_polygon :: Ptr DrawContext -> CULong -> Ptr PointInfo -> IO ()
 
 foreign import ccall "static magick/api.h DrawComposite"
 	draw_composite :: Ptr DrawContext -> CInt -> CDouble -> CDouble -> CDouble -> CDouble -> Ptr HImage_ -> IO ()
