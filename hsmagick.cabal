@@ -33,5 +33,5 @@ if impl(ghc > 6.8.2) {
 else {
    extensions: PatternSignatures
 }
-extensions:          CPP, ForeignFunctionInterface, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances
+extensions:          CPP, ForeignFunctionInterface, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, FunctionalDependencies
 }

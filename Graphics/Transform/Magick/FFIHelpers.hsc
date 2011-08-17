@@ -1,10 +1,4 @@
-{-# 
-	LANGUAGE
-	FlexibleInstances,
-	FlexibleContexts,
-	MultiParamTypeClasses,
-	FunctionalDependencies,
-	OPTIONS -fno-warn-orphans #-}
+{-# OPTIONS -fno-warn-orphans #-}
 module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   withExceptions_,
                   setField,
