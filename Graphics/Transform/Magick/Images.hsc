@@ -3,6 +3,8 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               getFilename,
               blobToImage,
               imageToBlob,
+              hImageRows, 
+              hImageColumns,
              -- transformations
               flipImage,
               flopImage,
