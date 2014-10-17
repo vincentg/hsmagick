@@ -67,6 +67,10 @@ import Data.Char
 import Data.List
 import System.Directory
 
+-- mitigate compile error
+
+import System.IO.Unsafe (unsafePerformIO)
+
 -- The externally-visible Haskell API for GraphicsMagick.
 
 -- API:
