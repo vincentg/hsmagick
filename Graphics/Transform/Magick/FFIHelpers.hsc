@@ -39,6 +39,8 @@ import Graphics.Transform.Magick.Magick
 import Graphics.Transform.Magick.Errors
 import Graphics.Transform.Magick.Util
 
+import System.IO.Unsafe (unsafePerformIO)
+
 import qualified Foreign.Concurrent as FC (newForeignPtr)
 
 import Control.Exception

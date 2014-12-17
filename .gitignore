@@ -1,0 +1,8 @@
+dist
+*.o
+*.hi
+*.chi
+*.chs.h
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config

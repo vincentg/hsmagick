@@ -63,6 +63,8 @@ import Graphics.Transform.Magick.FFIHelpers
 import Graphics.Transform.Magick.Errors
 import Graphics.Transform.Magick.Util
 
+import System.IO.Unsafe (unsafePerformIO)
+
 import Data.Char
 import Data.List
 import System.Directory
