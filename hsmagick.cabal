@@ -1,5 +1,5 @@
 name:                hsmagick
-version:             0.5
+version:             0.5.1
 synopsis:            FFI bindings for the GraphicsMagick library
 description:         FFI bindings for the GraphicsMagick library
 category:            Graphics

@@ -45,6 +45,10 @@ import Control.Exception
 import Prelude hiding (maximum, minimum)
 import Control.Monad
 
+-- mitigate compile error
+
+import System.IO.Unsafe (unsafePerformIO)
+
 -- functions to help with doing FFI 
 
 setImage :: HImage -> Ptr HImage_ -> HImage
