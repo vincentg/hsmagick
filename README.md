@@ -43,7 +43,8 @@ for their encouragement.
 
 === Contributors ===
 
-Thanks to "nonowarn", "Steffen Siering" for contributing patches.
+Thanks to "nonowarn", "Steffen Siering", "ricree", "nek0", "Sean Hess"
+for contributing patches.
 
 Installation
 ------------
