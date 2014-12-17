@@ -24,6 +24,61 @@ module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage,
               sampleImage,
               thumbnailImage,
               resizeImage,
+              --drawing
+              --getDrawInfo,--temporary, for testing
+              --destroyDrawInfo,
+              withDrawContext,
+              provideDrawContext,
+              drawLine,
+              drawText,
+              drawCircle,
+              drawRectangle,
+              drawRoundRectangle,
+              drawPolygon,
+              drawPolyline,
+              drawEllipse,
+              drawColor,
+              drawArc, 
+              drawBezier,
+              drawSetFontFamily,
+              drawSetFont,
+              drawSetTextDecoration,
+              drawSetTextAntialias,
+              drawSetTextUnderColor,
+              drawSetTextUnderColorString,
+              drawSetFillOpacity,
+              drawSetFontSize,
+              drawSetFontStretch,
+              drawSetFontStyle,
+              drawSetFontWeight,
+              drawSetGravity,
+              drawSetStrokeColor,
+              drawSetStrokeMiterLimit,
+              drawSetStrokeOpacity,
+              drawSetStrokeWidth,
+              drawSetStrokeLineCap,
+              drawSetStrokeLineJoin,
+              drawSetStrokeDashArray,
+              drawSetStrokeDashOffset,
+              drawSetStrokeAntialias,
+              drawSetFillColor,
+              drawSetFillRule,
+              drawSetFillColorString,
+              drawComposite,
+              drawTranslate,
+              drawRotate,
+              drawScale,
+              drawSkewX,
+              drawSkewY,
+              CompositeOperator(UndefinedCompositeOp, OverCompositeOp, InCompositeOp, OutCompositeOp, AutoCompositeOp, AtopCompositeOp, XorCompositeOp, PlusCompositeOp, MinusCompositeOp, AddCompositeOp, SubtractCompositeOp, DifferenceCompositeOp, BumpmapCompositeOp, CopyCompositeOp, CopyRedCompositeOp, CopyGreenCompositeOp, CopyBlueCompositeOp, CopyOpacityCompositeOp, ClearCompositeOp, DissolveCompositeOp, DisplaceCompositeOp, ModulateCompositeOp, ThresholdCompositeOp, NoCompositeOp, DarkenCompositeOp, LightenCompositeOp, HueCompositeOp, SaturateCompositeOp, ColorizeCompositeOp, LuminizeCompositeOp, ScreenCompositeOp, OverlayCompositeOp, CopyCyanCompositeOp, CopyMagentaCompositeOp, CopyBlackCompositeOp, DivideCompositeOp),
+              PaintMethod(PointMethod,ReplaceMethod,FloodfillMethod,FillToBorderMethod,ResetMethod),
+              FontStyleType(NormalStyle, ItalicStyle, ObliqueStyle, AnyStyle),
+              FontStretchType(NormalStretch, UltraCondensedStretch, ExtraCondensedStretch, CondensedStretch,SemiCondensedStretch, SemiExpandedStretch, ExpandedStretch, ExtraExpandedStretch, UltraExpandedStretch, AnyStretch),
+              DrawGravityType(ForgetGravity, NorthWestGravity, NorthGravity, NorthEastGravity, WestGravity, CenterGravity, EastGravity, SouthWestGravity, SouthGravity, SouthEastGravity),
+              LineJoin(..),
+              LineCap(..),
+              draw_get_clip_path,
+--              drawSetStopColor,
               -- enhancements
               contrastImage,
               equalizeImage,
@@ -63,6 +118,8 @@ import Graphics.Transform.Magick.FFIHelpers
 import Graphics.Transform.Magick.Errors
 import Graphics.Transform.Magick.Util
 
+import Control.Monad
+
 import Data.Char
 import Data.List
 import System.Directory
@@ -95,6 +152,175 @@ shaveImage              :: Rectangle -> HImage -> HImage
 scaleImage, sampleImage, thumbnailImage   :: Word -> Word -> HImage -> HImage
 magnifyImage, minifyImage                 :: HImage -> HImage
 resizeImage :: Int -> Int -> FilterTypes -> Double -> HImage -> HImage
+---------- Drawing
+--most functions are wrapped by doDrawOp, which takes a function starting with (Ptr DrawContext) and ending with IO (). It performs type conversion for numeric types, and formats it as expected by withDrawContext
+-- Functions with strings or other pointers are messier.  It cant handle the strings by themselves, so we need to convert those manually here
+
+
+finalizeDraw :: Ptr DrawContext -> IO (Ptr DrawContext)
+finalizeDraw = doDrawOp draw_render
+
+--doesnt seem to work
+drawSetFontFamily :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontFamily fam ctx = withCString fam (\ st -> (doDrawOp draw_set_font_family) st ctx)
+
+drawSetFont :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFont fnt ctx = withCString fnt (\ st -> (doDrawOp draw_set_font) st ctx)
+
+drawSetFillOpacity :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillOpacity = doDrawOp draw_set_fill_opacity
+
+drawLine :: Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawLine = doDrawOp draw_line
+
+drawArc :: Double -> Double -> Double -> Double -> Double -> Double  -> Ptr DrawContext ->  IO (Ptr DrawContext)
+drawArc = doDrawOp draw_arc
+
+drawEllipse :: Double -> Double -> Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawEllipse = doDrawOp draw_ellipse
+
+drawColor :: Double -> Double -> PaintMethod -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawColor x y meth ctx = (doDrawOp draw_color)  x y (fromEnum meth) ctx
+
+drawBezier :: [(Double,Double)] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawBezier coords ctx = do
+	cCoords <- getCoordPtr coords
+	withForeignPtr cCoords (\ coordPtr -> 
+		(doDrawOp draw_bezier) (length coords) coordPtr ctx)
+
+
+drawCircle :: Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawCircle = doDrawOp draw_circle
+
+drawRectangle :: Double -> Double -> Double ->Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawRectangle = doDrawOp draw_rectangle
+
+drawRoundRectangle :: Double -> Double -> Double -> Double -> Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawRoundRectangle = doDrawOp draw_round_rectangle
+
+drawPolygon :: [(Double,Double)] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawPolygon crds ctx= do
+	coords <- getCoordPtr crds
+	withForeignPtr coords (\cptr -> 
+		(doDrawOp draw_polygon)(length crds) cptr ctx)
+
+drawPolyline :: [(Double, Double)] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawPolyline crds ctx = do
+	coords <- getCoordPtr crds
+	withForeignPtr coords (\cptr -> 
+		(doDrawOp draw_polyline) (length crds) cptr ctx)
+
+drawText :: Double -> Double -> String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawText xp yp msg ctx = withCString msg (\ st -> (doDrawOp draw_annotation) xp yp st ctx)
+
+setDrawColor :: (Ptr DrawContext -> Ptr PixelPacketByte -> IO ()) -> Int -> Int -> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+setDrawColor colorFun r g b o ctx = do
+	pixelPtr <- mallocForeignPtr :: IO (ForeignPtr PixelPacketByte)
+	_ <- (withForeignPtr pixelPtr fillAndCall) :: IO (Ptr DrawContext)
+	_ <- draw_render ctx
+	return ctx
+	where
+		fillAndCall pixPtr = do
+			poke pixPtr ((PixelPacket (fromIntegral r) (fromIntegral g) (fromIntegral b) (fromIntegral o)) :: PixelPacket Word8)
+			(doDrawOp colorFun) pixPtr ctx
+
+
+drawSetStrokeColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeColor = setDrawColor draw_set_stroke_color
+
+drawSetStrokeMiterLimit :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeMiterLimit = doDrawOp draw_set_stroke_miter_limit
+
+drawSetStrokeOpacity :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeOpacity = doDrawOp draw_set_stroke_opacity
+
+drawSetStrokeWidth :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeWidth = doDrawOp draw_set_stroke_width
+
+drawSetStrokeLineCap :: LineCap -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeLineCap lc = (doDrawOp draw_set_stroke_line_cap) (fromEnum lc)
+
+drawSetStrokeLineJoin :: LineJoin -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeLineJoin lj = (doDrawOp draw_set_stroke_line_join) (fromEnum lj)
+
+drawSetStrokeDashArray :: [Double] -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeDashArray darray ctx = do
+	let cdubs = map realToFrac darray ::[CDouble]
+	withArray cdubs (\ dptr -> (doDrawOp  draw_set_stroke_dash_array) (length darray) dptr ctx)
+
+drawSetStrokeDashOffset :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeDashOffset = doDrawOp draw_set_stroke_dash_offset
+
+drawSetStrokeAntialias :: Bool -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetStrokeAntialias = doDrawOp draw_set_stroke_antialias
+
+drawSetFillColor :: Int -> Int-> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillColor= setDrawColor draw_set_fill_color 
+
+drawSetFillRule :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillRule = doDrawOp draw_set_fill_rule
+
+drawSetFillColorString :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFillColorString clr ctx = withCString clr (\ clstr -> (doDrawOp draw_set_fill_color_string) clstr ctx)
+
+--despite being in the source and doc, this function apparently doesnt exist
+-- to quote draw.c: This is gradient stuff so it shouldnt be supported yet
+-- drawSetStopColor :: Int -> Int -> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+-- drawSetStopColor = setDrawColor draw_set_stop_color
+
+--todo.  make real data type to enforce enum
+drawSetTextDecoration :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextDecoration = doDrawOp draw_set_text_decoration
+
+drawSetTextAntialias :: Bool -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextAntialias = doDrawOp draw_set_text_antialias
+
+drawSetTextUnderColor :: Int -> Int -> Int -> Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextUnderColor = setDrawColor draw_set_text_under_color
+
+drawSetTextUnderColorString :: String -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetTextUnderColorString clr ctx = withCString clr (\cstr -> doDrawOp draw_set_text_under_color_string cstr ctx)
+
+drawSetFontSize :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontSize a= (doDrawOp draw_set_font_size) a>=> finalizeDraw
+
+drawSetFontStretch :: FontStretchType -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontStretch st ctx = (doDrawOp draw_set_font_stretch) (fromEnum st) ctx
+
+drawSetFontStyle :: FontStyleType -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontStyle st ctx  = (doDrawOp draw_set_font_style) (fromEnum st) ctx
+
+--graphicsmagick docs say this must be between 100 and 900.  at the moment, it will just bump anything lower or higher to the min/max
+drawSetFontWeight :: Int -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetFontWeight wght ctx 
+	| wght < 100 = (doDrawOp draw_set_font_weight) (100::Int) ctx
+	| wght > 900 = (doDrawOp draw_set_font_weight) (900::Int) ctx
+	| otherwise = (doDrawOp draw_set_font_weight) wght ctx
+
+drawSetGravity :: DrawGravityType -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSetGravity gvt ctx= (doDrawOp draw_set_gravity) (fromEnum gvt) ctx
+
+drawComposite :: CompositeOperator -> Double -> Double -> Double -> Double -> HImage -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawComposite compOp x y width height hImg ctx= do
+	newImg <- cloneImage hImg
+	withForeignPtr (getImage newImg) (\ iPtr -> (doDrawOp draw_composite) (fromEnum compOp) x y width height iPtr ctx)
+
+
+drawTranslate :: Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawTranslate = doDrawOp draw_translate
+
+drawRotate :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawRotate = doDrawOp draw_rotate
+
+drawScale :: Double -> Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawScale = doDrawOp draw_scale
+
+drawSkewX :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSkewX = doDrawOp draw_skew_x
+
+drawSkewY :: Double -> Ptr DrawContext -> IO (Ptr DrawContext)
+drawSkewY = doDrawOp draw_skew_y
+
 --------- Enhancements
 contrastImage                 :: Contrast -> HImage -> HImage
 equalizeImage, normalizeImage :: HImage -> HImage
@@ -359,6 +585,8 @@ thumbnailImage xFactor yFactor hImage = doTransformIO_XY thumbnail_image
 
 shearImage xFactor yFactor hImage = doTransformIO_XY_real shear_image
                                      hImage xFactor yFactor
+
+-----drawing functions
 
 -- the stupid argument names are due to these names being already taken
 -- as record fields.

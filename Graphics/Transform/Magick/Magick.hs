@@ -27,6 +27,57 @@ module Graphics.Transform.Magick.Magick(module Foreign.C.Types,
               sample_image,
               thumbnail_image,
               resize_image,
+              --drawing 
+              get_draw_info,
+              destroy_draw_info,
+              force_destroy_draw_info,
+              draw_allocate_context,
+              draw_destroy_context,
+              draw_destroy_context_ptr,
+              draw_render,
+              draw_line,
+              draw_annotation,
+              draw_arc,
+              draw_bezier,
+              draw_color,
+              draw_circle,
+              draw_rectangle,
+              draw_round_rectangle,
+              draw_polygon,
+              draw_polyline,
+              draw_ellipse,
+              draw_set_font_family,
+              draw_set_font,
+              draw_set_fill_opacity,
+              draw_set_text_decoration,
+              draw_set_text_antialias,
+              draw_set_text_under_color,
+              draw_set_text_under_color_string,
+              draw_set_font_size,
+              draw_set_font_stretch,
+              draw_set_font_style,
+              draw_set_font_weight,
+              draw_set_gravity,
+              draw_set_stroke_color,
+              draw_set_stroke_miter_limit,
+              draw_set_stroke_opacity,
+              draw_set_stroke_width,
+              draw_set_stroke_line_cap,
+              draw_set_stroke_line_join,
+              draw_set_stroke_dash_array,
+              draw_set_stroke_dash_offset,
+              draw_set_stroke_antialias,
+              draw_set_fill_color,
+              draw_set_fill_rule,
+              draw_get_clip_path,
+              draw_set_fill_color_string,
+              draw_composite,
+              draw_translate,
+              draw_rotate,
+              draw_scale,
+              draw_skew_x,
+              draw_skew_y,
+--              draw_set_stop_color,
               -- enhancements
               contrast_image,
               equalize_image,
@@ -223,6 +274,158 @@ foreign import ccall "static magick/api.h ThumbnailImage"
 foreign import ccall "static magick/api.h ResizeImage"
     resize_image :: Ptr HImage_ -> CULong -> CULong -> CUInt -> CDouble -> 
                       Ptr ExceptionInfo -> IO (Ptr HImage_)
+----------------drawing
+
+foreign import ccall "static magick/api.h GetDrawInfo"
+	get_draw_info :: (Ptr HImageInfo) -> (Ptr DrawInfo) -> IO (Ptr DrawInfo)
+
+foreign import ccall "static magick/api.h &DestroyDrawInfo" 
+	destroy_draw_info:: FunPtr (Ptr DrawInfo -> IO ())
+
+foreign import ccall "static magick/api.h DestroyDrawInfo"
+	force_destroy_draw_info :: (Ptr DrawInfo -> IO())
+
+foreign import ccall "static magick/api.h DrawAllocateContext"
+	draw_allocate_context :: Ptr DrawInfo -> Ptr HImage_ -> IO (Ptr DrawContext)
+
+foreign import ccall "static magick/api.h &DrawDestroyContext"
+	draw_destroy_context_ptr :: FunPtr (Ptr DrawContext -> IO ())
+foreign import ccall "static magick/api.h DrawDestroyContext"
+	draw_destroy_context :: Ptr DrawContext -> IO ()
+
+foreign import ccall "static magick/api.h DrawRender"
+	draw_render :: Ptr DrawContext -> IO (CInt)
+
+foreign import ccall "static magick/api.h DrawLine"
+	draw_line :: Ptr DrawContext -> CDouble -> CDouble -> CDouble-> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawColor"
+	draw_color :: Ptr DrawContext -> CDouble -> CDouble -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontFamily"
+	draw_set_font_family :: Ptr DrawContext -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFont"
+	draw_set_font :: Ptr DrawContext -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawGetClipPath"
+	draw_get_clip_path :: Ptr DrawContext -> IO CString
+
+foreign import ccall "static magick/api.h DrawSetFillOpacity"
+	draw_set_fill_opacity :: Ptr DrawContext -> CDouble -> IO()
+
+foreign import ccall "static magick/api.h DrawSetStrokeColor"
+	draw_set_stroke_color :: Ptr DrawContext -> Ptr PixelPacketByte-> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFillColor"
+	draw_set_fill_color :: Ptr DrawContext -> Ptr PixelPacketByte -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFillRule"
+	draw_set_fill_rule :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFillColorString"
+	draw_set_fill_color_string :: Ptr DrawContext -> CString -> IO ()
+
+--foreign import ccall "static magick/api.h DrawSetStopColor"
+--	draw_set_stop_color :: Ptr DrawContext -> Ptr PixelPacketByte -> IO ()
+
+foreign import ccall "static magick/api.h DrawAnnotation"
+	draw_annotation :: Ptr DrawContext -> CDouble -> CDouble -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetTextDecoration"
+	draw_set_text_decoration :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetTextAntialias"
+	draw_set_text_antialias :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetTextUnderColor"
+	draw_set_text_under_color :: Ptr DrawContext -> Ptr PixelPacketByte -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetTextUnderColorString"
+	draw_set_text_under_color_string :: Ptr DrawContext -> CString -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontSize"
+	draw_set_font_size :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontStretch"
+	draw_set_font_stretch :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontStyle"
+	draw_set_font_style :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetFontWeight"
+	draw_set_font_weight :: Ptr DrawContext -> CULong -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetGravity"
+	draw_set_gravity :: Ptr DrawContext -> CInt -> IO ()
+
+
+
+foreign import ccall "static magick/api.h DrawArc"
+	draw_arc :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawBezier"
+	draw_bezier :: Ptr DrawContext -> CULong -> Ptr PointInfo -> IO ()
+
+foreign import ccall "static magick/api.h DrawCircle"
+	draw_circle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawRectangle"
+	draw_rectangle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h  DrawRoundRectangle"
+	draw_round_rectangle :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawPolygon"
+	draw_polygon :: Ptr DrawContext -> CULong -> Ptr PointInfo -> IO ()
+
+foreign import ccall "static magick/api.h DrawPolyline"
+	draw_polyline :: Ptr DrawContext -> CULong -> Ptr PointInfo -> IO ()
+
+foreign import ccall "static magick/api.h DrawComposite"
+	draw_composite :: Ptr DrawContext -> CInt -> CDouble -> CDouble -> CDouble -> CDouble -> Ptr HImage_ -> IO ()
+
+foreign import ccall "static magick/api.h DrawEllipse"
+	draw_ellipse :: Ptr DrawContext -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeMiterLimit"
+	draw_set_stroke_miter_limit :: Ptr DrawContext -> CULong -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeOpacity"
+	draw_set_stroke_opacity :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeWidth"
+	draw_set_stroke_width :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeLineCap"
+	draw_set_stroke_line_cap :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeLineJoin"
+	draw_set_stroke_line_join :: Ptr DrawContext -> CInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeDashArray"
+	draw_set_stroke_dash_array :: Ptr DrawContext -> CULong -> Ptr CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeDashOffset"
+	draw_set_stroke_dash_offset :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSetStrokeAntialias"
+	draw_set_stroke_antialias :: Ptr DrawContext-> CUInt -> IO ()
+
+foreign import ccall "static magick/api.h DrawTranslate"
+	draw_translate :: Ptr DrawContext -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawRotate"
+	draw_rotate :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawScale"
+	draw_scale :: Ptr DrawContext -> CDouble -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSkewX"
+	draw_skew_x :: Ptr DrawContext -> CDouble -> IO ()
+
+foreign import ccall "static magick/api.h DrawSkewY"
+	draw_skew_y :: Ptr DrawContext -> CDouble -> IO ()
 ---------- Enhancements
 
 -- Note that these side-effect the image! Higher-level API

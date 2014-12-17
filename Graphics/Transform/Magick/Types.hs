@@ -421,3 +421,155 @@ data HImage_ = HImage_ {
   list         :: CIntPtr,
   signature_   :: CULong
 }
+
+data CSegmentInfo = CSegmentInfo {
+	cx1 :: CDouble,
+	cy1	:: CDouble,
+	cx2	:: CDouble,
+	cy2	:: CDouble
+}
+
+data PaintMethod = PointMethod | ReplaceMethod | FloodfillMethod | FillToBorderMethod | ResetMethod deriving Enum
+
+data FontStretchType = NormalStretch | UltraCondensedStretch | ExtraCondensedStretch | CondensedStretch | SemiCondensedStretch | SemiExpandedStretch | ExpandedStretch | ExtraExpandedStretch | UltraExpandedStretch | AnyStretch deriving Enum
+
+data FontStyleType = NormalStyle | ItalicStyle | ObliqueStyle | AnyStyle deriving Enum
+
+data DrawGravityType = ForgetGravity | NorthWestGravity | NorthGravity | NorthEastGravity | WestGravity | CenterGravity | EastGravity | SouthWestGravity | SouthGravity | SouthEastGravity deriving Enum
+
+data CompositeOperator = UndefinedCompositeOp | OverCompositeOp | InCompositeOp | OutCompositeOp | AutoCompositeOp | AtopCompositeOp | XorCompositeOp | PlusCompositeOp | MinusCompositeOp | AddCompositeOp | SubtractCompositeOp | DifferenceCompositeOp | BumpmapCompositeOp | CopyCompositeOp | CopyRedCompositeOp | CopyGreenCompositeOp | CopyBlueCompositeOp | CopyOpacityCompositeOp | ClearCompositeOp | DissolveCompositeOp | DisplaceCompositeOp | ModulateCompositeOp | ThresholdCompositeOp | NoCompositeOp | DarkenCompositeOp | LightenCompositeOp | HueCompositeOp | SaturateCompositeOp | ColorizeCompositeOp | LuminizeCompositeOp | ScreenCompositeOp | OverlayCompositeOp | CopyCyanCompositeOp | CopyMagentaCompositeOp | CopyBlackCompositeOp | DivideCompositeOp deriving Enum
+
+data LineCap = UndefinedCap | ButtCap | RoundCap | SquareCap deriving Enum
+
+data LineJoin = UndefintedJoin | MiterJoin  | RoundJoin | BevelJoin deriving Enum
+
+
+data CRectangle = CRectangle {
+	rect_width	:: CUInt,
+	rect_height	:: CUInt,
+	rect_x		:: CInt,
+	rect_y		:: CInt
+}
+
+data PixelInfo = PixelInfo {
+	pixel_storage_class	:: CUInt,--enum
+	pixel_colorspace		:: CUInt,--enum
+	pixel_matte			:: CUInt,--enum
+	pixel_fuzz			:: CDouble,--enum
+	pixel_depth			:: CSize,
+	pixel_red				:: CDouble,
+	pixel_green			:: CDouble,
+	pixel_blue			:: CDouble,
+	pixel_alpha			:: CDouble,
+	pixel_black			:: CDouble,
+	pixel_index			:: CDouble
+}
+
+data StopInfo = StopInfo{
+	stop_color	:: PixelInfo,
+	stop_offset	:: CDouble
+}	
+
+data CPoint = CPoint {
+	px	:: CDouble,
+	py	:: CDouble
+}
+
+data GradientInfo = GradientInfo {
+	g_type	:: CUInt, --enum
+	g_color :: PixelPacketByte,
+	g_stop	:: CSegmentInfo,
+	g_length:: CULong,
+	g_spread :: CUInt,--enum
+	g_signature :: CULong,
+	g_previous :: Ptr GradientInfo,
+	g_next	:: Ptr GradientInfo
+}
+
+data ElementReference = ElementReference {
+  eid	:: CString,
+  etype	:: CUInt, --enum
+  egradient:: GradientInfo,
+  esignature :: CULong,
+  previous_element	:: Ptr ElementReference,
+  next_element		:: Ptr ElementReference
+}
+{-as much as I'd love to, apparently these have to be manually initialized
+ - data DrawContextStruct = DrawContextStruct
+type DrawContext = Ptr DrawContextStruct
+data DrawInfoStruct = DrawInfoStruct
+type DrawInfo = Ptr DrawInfoStruct
+-}
+data DrawContext = DrawContext {
+  c_image		:: Ptr Image,
+  c_mvg			:: CString,
+  c_mvg_alloc	:: CSize,
+  c_mvg_length	:: CSize,
+  c_mvg_width	:: CUInt,
+  c_pattern_id	:: CString,
+  c_pattern_bounds:: CRectangle,
+  c_patteern_offset::CSize,
+  c_index		:: CUInt,
+  c_graphic_context:: Ptr (Ptr DrawInfo),
+  c_filter_off	:: CInt,
+  c_indent_depth:: CUInt,
+  c_path_operation:: CUInt,--enum
+  c_path_mode	:: CUInt,--enum
+  c_signature	:: CULong
+}
+
+data PointInfo = PointInfo{pt_x :: Double, pt_y :: Double}
+
+data CAffineMatrix = CAffineMatrix { c_sx::CDouble,
+                                   c_rx::CDouble,
+                                   c_ry::CDouble,
+                                   c_sy::CDouble,
+                                   c_tx::CDouble,
+                                   c_ty::CDouble }
+
+--  ok kids. check your dependencies before you implement the wrong giant struct
+--todo: give enumerators explicit types
+data DrawInfo = DrawInfo {
+  d_primitive	:: CString, --todo - what are these two?
+  d_geometry	:: CString,
+  d_affine	:: CAffineMatrix,
+  d_gravity	:: CUInt,--enum
+  d_fill		:: PixelPacketByte,
+  d_stroke	:: PixelPacketByte,
+  d_stroke_width :: CDouble,
+  d_gradient	:: GradientInfo,
+  d_fill_pattern :: Ptr Image,
+  d_tile		:: Ptr HImage_,
+  d_stroke_pattern ::Ptr HImage_,
+  d_stroke_antialias :: CUInt, --enum/boolean
+  d_text_antialias  :: CUInt,  --enum/boolean
+  d_fill_rule	:: CUInt,--enum
+  d_linecap	:: CUInt,--enum
+  d_linejoin	:: CUInt,--enum
+  d_miterlimit:: CSize,
+  d_dash_offset:: CDouble,
+  d_decorate	:: CUInt,--enum
+  d_compose	:: CUInt,--enum
+  d_text		:: CString,
+  d_font		:: CString,
+  d_family		:: CString,
+  d_style		:: CUInt, --enum
+  d_stretch		:: CUInt,--enum
+  d_weight	:: CULong,
+  d_encoding	:: CString,
+  d_pointsize	:: CDouble,
+  d_density	:: CString,
+  d_align		:: CUInt, --enum
+  d_undercolor:: PixelPacketByte,
+  d_border_color:: PixelPacketByte,
+  d_server_name	:: CString,
+  d_dash_pattern	:: Ptr Double,
+  d_clip_path	:: CString,
+  d_bounds	:: CSegmentInfo,
+  d_clip_units	:: CUInt, --eneum
+  d_opacity	:: CUShort,
+  d_render	:: CUInt, --enum/boolean
+  d_debug		:: CUInt, --enum/boolean
+  d_element_reference ::  ElementReference,
+  d_signature	:: CULong
+}

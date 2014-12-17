@@ -1,4 +1,10 @@
-{-# OPTIONS -fno-warn-orphans #-}
+{-# 
+	LANGUAGE
+	FlexibleInstances,
+	FlexibleContexts,
+	MultiParamTypeClasses,
+	FunctionalDependencies,
+	OPTIONS -fno-warn-orphans #-}
 module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   withExceptions_,
                   setField,
@@ -9,6 +15,7 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   applyImageFn',
                   applyImageFn1,
                   applyImageFn1',
+                  cloneImage,
                   setFilename,
                   getFilename,
                   setPage,
@@ -16,6 +23,7 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   doTransformIO,
                   doTransformIO_XY,
                   doTransformIO_XY_real,
+                  doDrawOp,
                   sideEffectingOp,
                   linkImagesTogether,
                   mkNewExceptionInfo,
@@ -30,6 +38,9 @@ module Graphics.Transform.Magick.FFIHelpers(withExceptions,
                   hImageRows,
                   hImageColumns,
                   maybeToPtr,
+                  withDrawContext,
+                  provideDrawContext,
+                  getCoordPtr,
                   mkNewUnloadedImage) where
 
 #include <magick/api.h>
@@ -874,3 +885,313 @@ maybeToPtr :: Storable a => Maybe a -> Ptr a -> IO (Ptr a)
 maybeToPtr Nothing _      = return nullPtr
 maybeToPtr (Just stuff) p = poke p stuff >> return p
 
+---drawing utility functions
+
+getCoordPtr :: [(Double,Double)] -> IO (ForeignPtr PointInfo)
+getCoordPtr hsCoords = do
+	let pointInfo = map (\ (x,y)-> PointInfo x y) hsCoords
+	memPtr <- mallocArray (length hsCoords)
+	pokeArray memPtr pointInfo
+	newForeignPtr finalizerFree memPtr
+
+getDrawInfo ::HImage -> IO (Ptr DrawInfo)
+getDrawInfo img = do
+	rawinfo <- malloc
+	_ <- withForeignPtr (imageInfo (otherInfo img)) (\info_ptr -> get_draw_info info_ptr rawinfo)
+	return rawinfo
+destroyDrawInfo :: Ptr DrawInfo -> IO ()
+destroyDrawInfo dinfo = do
+	force_destroy_draw_info dinfo
+
+newtype DrawOp = DrawOp (Ptr DrawContext -> IO ())
+
+provideDrawContext :: HImage -> IO (ForeignPtr DrawContext)
+provideDrawContext hImg = do
+	newImg <- cloneImage hImg
+	rawCtx <- withForeignPtr (getImage newImg) (\i_ptr -> draw_allocate_context nullPtr i_ptr)
+	newForeignPtr draw_destroy_context_ptr rawCtx
+
+withDrawContext :: HImage -> (Ptr DrawContext -> IO (Ptr DrawContext)) -> HImage
+withDrawContext hImg op = unsafePerformIO $ do
+	newImg <- cloneImage hImg --draws are destructive, have to hide it
+	withForeignPtr (getImage newImg) (\ i_ptr -> 
+		do
+			context <- draw_allocate_context nullPtr i_ptr
+			_ <- op context --for composibility, op returns its context.  but we dont actually need it anymore at the real runtime
+			success <- draw_render context
+			draw_destroy_context context)
+	return newImg
+
+class DrawOperation interiorArgs extArgs where 
+	doDrawOp :: (Ptr DrawContext -> interiorArgs) -> extArgs  -- -> IO (Ptr DrawContext)
+
+instance DrawOperation (IO a) (Ptr DrawContext -> IO (Ptr DrawContext)) where
+	doDrawOp = preserveDrawContext 
+
+preserveDrawContext :: (Ptr DrawContext -> IO a) -> Ptr DrawContext -> IO (Ptr DrawContext)
+preserveDrawContext op ctx = do
+	_ <- op ctx
+	return ctx
+
+
+applyArgToFunc :: (Real b, Fractional a) => (Ptr DrawContext -> a->whatever->IO ()) -> b -> Ptr DrawContext -> whatever -> IO ()
+applyArgToFunc op x ctx = op ctx (realToFrac x)
+
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (Ptr a->intArgs) (Ptr a->extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx a)
+
+instance (DrawOperation intArgs extArgs) =>  DrawOperation (CInt -> intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (CULong -> intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (CDouble->intArgs) (Double->extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (realToFrac a))
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (Word8->intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
+
+instance (DrawOperation intArgs extArgs) => DrawOperation (CUShort->intArgs) (Int -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromIntegral a))
+
+instance (DrawOperation intArgs extArgs, Num a) => DrawOperation (a -> intArgs) (Bool -> extArgs) where
+	doDrawOp op a = doDrawOp (\ctx -> op ctx (fromBool a))
+
+
+doDrawOperation :: ((Ptr DrawContext -> IO ()) -> HImage -> HImage)
+doDrawOperation op hImg= unsafePerformIO $ do
+	newImg <- cloneImage hImg --draws are destructive, have to hide it
+	withForeignPtr (getImage newImg) (\ i_ptr -> 
+		do
+			context <- draw_allocate_context nullPtr i_ptr
+			op context
+			success <- draw_render context
+			draw_destroy_context context)
+	return newImg
+
+
+
+---drawing struct instances  move to FFIHelpers with the other instance declarations
+
+#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__);}, y__)
+
+instance Storable CSegmentInfo where
+	alignment _ = #{alignment SegmentInfo}
+	sizeOf _ = #{size SegmentInfo}
+	peek ptr = do
+		x1 <- #{peek SegmentInfo, x1} ptr
+		x2 <- #{peek SegmentInfo, x2} ptr
+		y1 <- #{peek SegmentInfo, y1} ptr
+		y2 <- #{peek SegmentInfo,  y2} ptr
+		return (CSegmentInfo x1 y1 x2 y2)
+	poke ptr (CSegmentInfo x1 y1 x2 y2) = do
+		#{poke SegmentInfo, x1} ptr x1
+		#{poke SegmentInfo, y1} ptr y1
+		#{poke SegmentInfo, x2} ptr x2
+		#{poke SegmentInfo, y2} ptr y2
+
+instance Storable GradientInfo where
+	alignment _ = #{alignment GradientInfo}
+	sizeOf _ = #{size GradientInfo}
+	peek ptr = do
+		typ <- #{peek GradientInfo, type} ptr
+		color <- #{peek GradientInfo, color} ptr
+		stop <- #{peek GradientInfo, stop} ptr
+		length <- #{peek GradientInfo, length} ptr
+		spread <- #{peek GradientInfo, spread} ptr
+		sig <- #{peek GradientInfo, signature} ptr
+		prev <- #{peek GradientInfo, previous} ptr
+		nxt <- #{peek GradientInfo, next} ptr
+		return (GradientInfo typ color stop length spread sig prev nxt)
+	poke ptr (GradientInfo typ color stop length spread sig prev nxt) = do
+		#{poke GradientInfo, type} ptr typ
+		#{poke GradientInfo, color} ptr color
+		#{poke GradientInfo, stop} ptr stop
+		#{poke GradientInfo, length} ptr length
+		#{poke GradientInfo, spread} ptr spread
+		#{poke GradientInfo, signature} ptr sig
+		#{poke GradientInfo, previous} ptr prev
+		#{poke GradientInfo, next} ptr nxt
+
+instance Storable ElementReference where
+	alignment _ = #{alignment ElementReference}
+	sizeOf _ = #{size ElementReference}
+	peek ptr = do
+		id <- #{peek ElementReference, id} ptr
+		typ <- #{peek ElementReference, type} ptr
+		grad <- #{peek ElementReference, gradient} ptr
+		signature <- #{peek ElementReference, signature} ptr
+		previous <- #{peek ElementReference, previous} ptr
+		next<- #{peek ElementReference, next} ptr
+		return (ElementReference id typ grad signature previous next)
+	poke ptr (ElementReference id typ grad signature previous next) = do
+		#{poke ElementReference, id} ptr id
+		#{poke ElementReference, type} ptr typ
+		#{poke ElementReference, gradient} ptr grad
+		#{poke ElementReference, signature} ptr signature
+		#{poke ElementReference, previous} ptr previous
+		#{poke ElementReference, next} ptr next
+
+instance Storable CAffineMatrix where
+	alignment _ = #{alignment AffineMatrix}
+	sizeOf _ = #{size AffineMatrix}
+	peek ptr = do
+		sx <- #{peek AffineMatrix, sx} ptr
+		rx <- #{peek AffineMatrix, rx} ptr
+		ry <- #{peek AffineMatrix, ry} ptr
+		sy <- #{peek AffineMatrix, sy} ptr
+		tx <- #{peek AffineMatrix, tx} ptr
+		ty <- #{peek AffineMatrix, ty} ptr
+		return (CAffineMatrix sx rx ry sy tx ty)
+	poke ptr (CAffineMatrix sx rx ry sy tx ty) = do
+		#{poke AffineMatrix, sx} ptr sx
+		#{poke AffineMatrix, rx} ptr rx
+		#{poke AffineMatrix, ry} ptr ry
+		#{poke AffineMatrix, sy} ptr sy
+		#{poke AffineMatrix, tx} ptr tx
+		#{poke AffineMatrix, ty} ptr ty
+{- we can't do this easily since it's defined in the .c instead of the .h
+but in retrospect, we may not need it since we dont touch the structure directly
+instance Storable DrawContext where
+	alignment _ = #{alignment struct _DrawContext}
+	sizeOf _ = #{size struct _DrawContext}
+	peek ptr = do
+		img <- #{peek struct _DrawwContext, image} ptr
+		mvg <- #{peek struct _DrawContext, mvg} ptr
+		mvg_alloc <- #{peek struct _DrawContext, mvg_alloc} ptr
+		mvg_length <- #{peek struct _DrawContext, mvg_length} ptr
+		mvg_width <- #{peek struct _DrawContext, mvg_width} ptr
+		pattern_id <- #{peek struct _DrawContext, pattern_id} ptr
+		pattern_bounds <- #{peek struct _DrawContext, pattern_bounds} ptr
+		pattern_offset <- #{peek struct _DrawContext, pattern_offset} ptr
+		index <- #{peek struct _DrawContext, index} ptr
+		graphic_context <- #{peek struct _DrawContext, graphic_context} ptr
+		filter_off <- #{peek struct _DrawContext, filter_off} ptr
+		indent_depth <- #{peek struct _DrawContext, indent_depth} ptr
+		path_operation <- #{peek struct _DrawContext, path_operation} ptr
+		path_mode <- #{peek struct _DrawContext, path_mode} ptr
+		signature <- #{peek  struct _DrawContext, signature} ptr
+		return (DrawContext img mvg mvg_alloc mvg_length mvg_width pattern_id pattern_bounds pattern_offset index graphic_context filter_off indent_depth path_operation path_mode signature)
+	poke ptr (DrawContext img mvg mvg_alloc mvg_length mvg_width pattern_id pattern_bounds pattern_offset index graphic_context filter_off indent_depth path_operation path_mode signature) = do
+		#{poke DrawContext, image} ptr img
+		#{poke DrawContext, mvg} ptr mvg
+		#{poke DrawContext, mvg_alloc} ptr mvg
+		#{poke DrawContext, mvg_length} ptr mvg
+		#{poke DrawContext, mvg_width} ptr mvg
+		#{poke DrawContext, pattern_id} ptr pattern_id
+		#{poke DrawContext, pattern_bounds} ptr pattern_bounds
+		#{poke DrawContext, pattern_offset} ptr pattern_offset
+		#{poke DrawContext, index} ptr index
+		#{poke DrawContext, graphic_context} ptr graphic_context
+		#{poke DrawContext, filter_off} ptr filter_off
+		#{poke DrawContext, indent_depth} ptr indent_depth
+		#{poke DrawContext, path_operation} ptr path_operation
+		#{poke DrawContext, path_mode} ptr path_mode
+		#{poke DrawContext, signature} ptr signature
+		
+-}
+
+instance Storable PointInfo where
+	alignment _ = #{alignment PointInfo}
+	sizeOf _ = #{size PointInfo}
+	peek ptr = do
+		px <- #{peek PointInfo, x} ptr
+		py <- #{peek PointInfo, y} ptr
+		return $ PointInfo px py
+	poke ptr (PointInfo px py) = do
+		#{poke PointInfo, x} ptr px
+		#{poke PointInfo, y} ptr py
+
+
+--long, but I dont -know any shorter way of doing this
+
+instance Storable DrawInfo where
+	alignment _ = #{alignment DrawInfo}
+	sizeOf _ = #{size DrawInfo}
+	peek ptr = do
+		prim <- #{peek DrawInfo, primitive} ptr
+		geo <- #{peek DrawInfo, geometry} ptr
+		affine <- #{peek DrawInfo, affine} ptr
+		grav <- #{peek DrawInfo, gravity} ptr
+		fill  <- #{peek DrawInfo, fill} ptr
+		stroke <- #{peek DrawInfo, stroke} ptr
+		stroke_width <- #{peek DrawInfo, stroke_width} ptr
+		gradient <- #{peek DrawInfo, gradient} ptr
+		fill_pattern <- #{peek DrawInfo, fill_pattern} ptr
+		tile <- #{peek DrawInfo, tile} ptr
+		stroke_pattern <- #{peek DrawInfo, stroke_pattern} ptr
+		stroke_antialias <- #{peek DrawInfo, stroke_antialias} ptr
+		text_antialias <- #{peek DrawInfo, text_antialias} ptr
+		fill_rule <- #{peek DrawInfo, fill_rule} ptr
+		linecap <- #{peek DrawInfo, linecap} ptr
+		linejoin <- #{peek DrawInfo, linejoin} ptr
+		miterlimit <- #{peek DrawInfo, miterlimit} ptr
+		dash_offset <- #{peek DrawInfo, dash_offset} ptr
+		decorate <- #{peek DrawInfo, decorate} ptr
+		compose <- #{peek DrawInfo, compose} ptr
+		text <- #{peek DrawInfo, text} ptr
+		font <- #{peek DrawInfo, font} ptr
+		family <- #{peek DrawInfo, family} ptr
+		style <- #{peek DrawInfo, style} ptr
+		stretch <- #{peek DrawInfo, stretch} ptr
+		weight <- #{peek DrawInfo, weight} ptr
+		encoding <- #{peek DrawInfo, encoding} ptr
+		pointsize <- #{peek DrawInfo, pointsize} ptr
+		density <- #{peek DrawInfo, density} ptr
+		align <- #{peek DrawInfo, align} ptr
+		undercolor <- #{peek DrawInfo, undercolor} ptr
+		border_color <- #{peek DrawInfo, border_color} ptr
+		server_name <- #{peek DrawInfo, server_name} ptr
+		dash_pattern <- #{peek DrawInfo, dash_pattern} ptr
+		clip_mask <- #{peek DrawInfo, clip_path} ptr
+		bounds <- #{peek DrawInfo, bounds} ptr
+		clip_units <- #{peek DrawInfo, clip_units} ptr
+		opacity <- #{peek DrawInfo, opacity} ptr
+		render <- #{peek DrawInfo, render} ptr
+		dbg <- #{peek DrawInfo, debug} ptr
+		element <- #{peek DrawInfo, element_reference} ptr
+		sig <- #{peek DrawInfo, signature} ptr
+		return (DrawInfo prim geo affine grav fill stroke stroke_width gradient fill_pattern tile stroke_pattern stroke_antialias text_antialias fill_rule linecap linejoin miterlimit dash_offset decorate compose text font family style stretch weight encoding pointsize density align undercolor border_color server_name dash_pattern clip_mask bounds clip_units opacity render dbg element sig)
+	poke ptr (DrawInfo prim geo affine grav fill stroke stroke_width gradient fill_pattern tile stroke_pattern stroke_antialias text_antialias fill_rule linecap linejoin miterlimit dash_offset decorate compose text font family style stretch weight encoding pointsize density align undercolor border_color server_name dash_pattern clip_mask bounds clip_units opacity render dbg element sig) = do
+		#{poke DrawInfo, primitive} ptr prim
+		#{poke DrawInfo, geometry} ptr geo
+		#{poke DrawInfo, affine} ptr affine
+		#{poke DrawInfo, gravity} ptr grav
+		#{poke DrawInfo, fill} ptr fill
+		#{poke DrawInfo, stroke} ptr stroke
+		#{poke DrawInfo, stroke_width} ptr stroke_width
+		#{poke DrawInfo, gradient} ptr gradient
+		#{poke DrawInfo, fill_pattern} ptr fill_pattern
+		#{poke DrawInfo,  tile} ptr tile
+		#{poke DrawInfo, stroke_pattern} ptr stroke_pattern
+		#{poke DrawInfo, stroke_antialias} ptr stroke_antialias
+		#{poke DrawInfo, text_antialias} ptr text_antialias
+		#{poke DrawInfo, fill_rule} ptr fill_rule
+		#{poke DrawInfo, linecap} ptr linecap
+		#{poke DrawInfo, linejoin} ptr linejoin
+		#{poke DrawInfo, miterlimit} ptr miterlimit
+		#{poke DrawInfo, dash_offset} ptr dash_offset
+		#{poke DrawInfo, decorate} ptr decorate
+		#{poke DrawInfo, compose} ptr compose
+		#{poke DrawInfo, text} ptr text
+		#{poke DrawInfo, font} ptr font
+		#{poke DrawInfo, family} ptr family
+		#{poke DrawInfo, style} ptr style
+		#{poke DrawInfo, stretch} ptr stretch
+		#{poke DrawInfo, weight} ptr weight
+		#{poke DrawInfo, encoding} ptr encoding
+		#{poke DrawInfo, density} ptr density
+		#{poke DrawInfo, align} ptr align
+		#{poke DrawInfo, undercolor} ptr undercolor
+		#{poke DrawInfo, border_color} ptr border_color
+		#{poke DrawInfo, server_name} ptr server_name
+		#{poke DrawInfo, dash_pattern} ptr dash_pattern
+		#{poke DrawInfo, clip_path} ptr clip_mask
+		#{poke DrawInfo, bounds} ptr bounds
+		#{poke DrawInfo, clip_units} ptr clip_units
+		#{poke DrawInfo, opacity} ptr opacity
+		#{poke DrawInfo, render} ptr render
+		#{poke DrawInfo, debug} ptr dbg
+		#{poke DrawInfo, element_reference} ptr element
