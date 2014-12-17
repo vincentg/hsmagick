@@ -45,3 +45,15 @@ for their encouragement.
 
 Thanks to "nonowarn", "Steffen Siering" for contributing patches.
 
+Installation
+------------
+
+This package requires graphicsmagic, lcms, jasper, and libwmf
+
+OSX Installation instructions (tested on 10.10)
+
+    brew install GraphicsMagick lcms jasper libwmf
+
+    cabal install hsmagick
+
+
