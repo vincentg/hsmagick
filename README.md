@@ -15,7 +15,7 @@ The Haddock documentation only includes type signatures so far, and
 that's not good enough. However, the API calls should mostly map onto
 those documented at:
 
-   http://www.graphicsmagick.org/www/api.html
+   http://www.graphicsmagick.org/api/api.html
 
 Tests can be found in:
    Graphics.Transform.Magick.Test
