@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Graphics.Transform.Magick.Images(initializeMagick, readImage, writeImage, pingImage,
               readInlineImage,
               getFilename,
